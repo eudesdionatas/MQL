@@ -28,7 +28,6 @@ enum ENUM_TARGET
    ET130    =  130, // R$ 130,00
    ET140    =  140, // R$ 140,00
    ET150    =  150, // R$ 150,00
-
 };
 
 input string        inpStartHour      = "9:15";            // Horário de Início
