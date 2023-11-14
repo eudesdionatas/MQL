@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "Lucas, Eudes e Alexandre"
 #property link      "https://www.mql5.com"
-#property version   "1.04"
+#property version   "1.05"
 
 #include <Trade/Trade.mqh>
 #include <Math/Stat/Math.mqh>
