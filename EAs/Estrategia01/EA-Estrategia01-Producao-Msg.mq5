@@ -7,12 +7,12 @@
 #property link      "https://www.mql5.com"
 #property version   "1.02"
 
-#include <Trade/Trade.mqh>
 //#include <Math/Stat/Math.mqh>
-#include "ClientSocket.mqh"
-#include "JAson.mqh"
+#include <Trade/Trade.mqh>
+#include "..\\Socket\\ClientSocket.mqh"
+#include "..\\Socket\\JAson.mqh"
 
-#resource "\\Indicators\\AlexessSavitzkyGolayMA-Estrategia1.ex5"
+#resource "\\Indicators\\MQL_IA\\Estrategia01\\AlexessSavitzkyGolayMA.ex5"
 //+------------------------------------------------------------------+
 //| Enums                                                            |
 //+------------------------------------------------------------------+
@@ -51,7 +51,7 @@ input int                iMAShift      = 0;           // MA Shift
 
 
 //--- main variables
-CTrade trade;
+//CTrade trade;
 int mainHandler;
 double sgB[];
 double maB[];
@@ -69,48 +69,18 @@ datetime endTime;
 //--- socket
 CClientSocket* Socket;
 MqlRates rates[];
-datetime lastCandleTime;
 int nCandlesToSocket;
+int msgPosition;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   // file
-   /*
-   fileCtrl = FileOpen(filename, FILE_READ | FILE_CSV | FILE_ANSI | FILE_COMMON);
-   if(fileCtrl != INVALID_HANDLE)
-   {
-      FileReadString(fileCtrl);
-      datetime time;
-      bool     operate;
-      string line[2];
-      while(!FileIsEnding(fileCtrl))
-      {
-         StringSplit(FileReadString(fileCtrl), ',', line);
-         
-         time    = StringToTime(line[0]);
-         operate = StringCompare(line[1], "True") == 0;
-         
-         if(operate)
-         {
-            ArrayResize(tto, tto.Size()+1);
-            tto[tto.Size()-1] = time;
-         }
-      }
-   }
-   else
-   {
-      Print("Error (line ", __LINE__, "): ", GetLastError());
-      return(INIT_FAILED);
-   }
-   */
-   
    // handlers
    mainHandler = iCustom(NULL,
                          0,
-                         "::Indicators\\AlexessSavitzkyGolayMA-Estrategia1",
+                         "::Indicators\\MQL_IA\\Estrategia01\\AlexessSavitzkyGolayMA",
                          iStartTime,
                          iSeparatorSG,
                          iNP,
@@ -137,8 +107,9 @@ int OnInit()
    Socket.Config("localhost", 9091);
    
    //---
-   lastCandleTime = 0;
    nCandlesToSocket = 15;
+   
+   msgPosition = 0;
    
    //---
    return(INIT_SUCCEEDED);
@@ -157,35 +128,13 @@ void OnDeinit(const int reason)
 }
 
 //+------------------------------------------------------------------+
-//| Indicator function                                               |
+//| PrintOperation function                                          |
 //+------------------------------------------------------------------+
-/*
-bool timeToOperate(datetime time)
+void PrintOperation(ENUM_POSITION_TYPE type, double lots, double price)
 {
-   for(int i = ArraySize(tto)-1; i >= 0; i--)
-   {
-      if(tto[i] == time)
-         return(true);
-   }
+   string strOperation = type == POSITION_TYPE_BUY ? "Buy" : "Sell";
    
-   return(false);
-}
-*/
-
-//+------------------------------------------------------------------+
-//| IsNewCandle function                                             |
-//+------------------------------------------------------------------+
-bool IsNewCandle()
-{
-   datetime time[];
-   
-   if(CopyTime(Symbol(), Period(), 0, 1, time) < 1)
-      return false;
-   
-   if(time[0] == lastCandleTime)
-      return false;
-   
-   return bool(lastCandleTime = time[0]);
+   Print(strOperation, ": ", DoubleToString(lots, 0), " ", _Symbol, " at ", DoubleToString(price, 0));
 }
 
 //+------------------------------------------------------------------+
@@ -214,8 +163,7 @@ bool IsToOperate()
    }
    
    string serialized = data.Serialize();
-   
-   Print("serialized: ", serialized);
+   //Print("serialized: ", serialized);
    
    if(!Socket.IsConnected())
    {
@@ -223,13 +171,10 @@ bool IsToOperate()
       return(false);
    }
    
-   //bool send = Socket.SocketSend(serialized);
-   //Print("send: ", send);
-   //if(send)
    if(Socket.SocketSend(serialized))
    {
       string yhat = Socket.SocketReceive();
-      Print("Value of Prediction: ", yhat);
+      //Print("Value of Prediction: ", yhat);
       
       if(yhat == "True" )
       {
@@ -251,7 +196,7 @@ bool IsToOperate()
 void OnTick()
 {
 //---
-   int nPositions;
+   //int nPositions;
    MqlRates lastRates[1];
    MqlTick  lastTick;
    
@@ -260,15 +205,40 @@ void OnTick()
    
    // current time is less than or equal to the start time
    if(currentTime < initTime)
+   {
+      lastColorIndicator = 0;
+      msgPosition = 0;
       return;
+   }
    
-   nPositions = PositionsTotal();
+   //nPositions = PositionsTotal();
    
    // current time is greater than or equal to the closing time or the gain is greater than or equal to the daily target 
    if(currentTime >= endTime)
    {
-      if(nPositions > 0)
-         trade.PositionClose(_Symbol);
+      //if(nPositions > 0)
+      //   trade.PositionClose(_Symbol);
+      
+      lastColorIndicator = 0;
+      
+      if(msgPosition != 0)
+      {
+         if(!SymbolInfoTick(_Symbol, lastTick))
+         {
+            Print("Erro ao tentar o último tick: ", GetLastError());
+            return;
+         }
+         
+         Print("Fechando posição aberta no horário limite do dia:");
+         
+         if(msgPosition > 0)
+            PrintOperation(POSITION_TYPE_SELL, iLots, lastTick.last);
+         else
+            PrintOperation(POSITION_TYPE_BUY, iLots, lastTick.last);
+         
+         msgPosition = 0;
+      }
+      
       
       return;
    }
@@ -308,7 +278,7 @@ void OnTick()
          break;
    }
    
-   if(nPositions == 0)
+   if(msgPosition == 0) //nPositions == 0)
    {
       if(colorIndicator > 0 && colorIndicator != lastColorIndicator)
       {
@@ -316,7 +286,13 @@ void OnTick()
          
          //if(timeToOperate(lastRates[0].time))
          if(IsToOperate())
-            trade.Buy(iLots, _Symbol);
+         {
+            //trade.Buy(iLots, _Symbol);
+            Print("Iniciando nova posição:");
+         
+            PrintOperation(POSITION_TYPE_BUY, iLots, lastTick.last);
+            msgPosition = 1;
+         }
       }
       else
       if(colorIndicator < 0 && colorIndicator != lastColorIndicator)
@@ -325,25 +301,40 @@ void OnTick()
          
          //if(timeToOperate(lastRates[0].time))
          if(IsToOperate())
-            trade.Sell(iLots, _Symbol);
+         {
+            //trade.Sell(iLots, _Symbol);
+            Print("Iniciando nova posição:");
+            
+            PrintOperation(POSITION_TYPE_SELL, iLots, lastTick.last);
+            msgPosition = -1;
+         }
       }
       
    }
    
    else // if(positions == 0)
    {
-      PositionSelect(_Symbol);
+      //PositionSelect(_Symbol);
       
-      if(PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY)
+      if(msgPosition > 0) //PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY)
       {
          if(colorIndicator < 0)
          {
             if(colorIndicator != lastColorIndicator && IsToOperate()) //timeToOperate(lastRates[0].time))
             {
-               trade.Sell(2*iLots, _Symbol);
+               //trade.Sell(2*iLots, _Symbol);
+            
+               PrintOperation(POSITION_TYPE_SELL, 2*iLots, lastTick.last);
+               msgPosition = -1;
             }
             else
-               trade.PositionClose(_Symbol);
+            {
+               //trade.PositionClose(_Symbol);
+               Print("Fechando posição:");
+            
+               PrintOperation(POSITION_TYPE_SELL, iLots, lastTick.last);
+               msgPosition = 0;
+            }
             
             lastColorIndicator = colorIndicator;
          }
@@ -351,16 +342,25 @@ void OnTick()
       
       else
       
-      if(PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL)
+      if(msgPosition < 0) //PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL)
       {
          if(colorIndicator > 0)
          {
             if(colorIndicator != lastColorIndicator && IsToOperate()) //timeToOperate(lastRates[0].time))
             {
-               trade.Buy(2*iLots, _Symbol);
+               //trade.Buy(2*iLots, _Symbol);
+            
+               PrintOperation(POSITION_TYPE_BUY, 2*iLots, lastTick.last);
+               msgPosition = 1;
             }
             else
-               trade.PositionClose(_Symbol);
+            {
+               //trade.PositionClose(_Symbol);
+               Print("Fechando posição:");
+            
+               PrintOperation(POSITION_TYPE_BUY, iLots, lastTick.last);
+               msgPosition = 0;
+            }
             
             lastColorIndicator = colorIndicator;
          }

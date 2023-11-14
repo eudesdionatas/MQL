@@ -15,8 +15,11 @@ SET indTargetDir=%CD%\Indicators\MQL_IA
 REM @echo %eaTargetDir%
 REM @echo %indTargetDir%
 
-xcopy %esSrcDir% %eaTargetDir% /i /s /y
-xcopy %indSrcDir% %indTargetDir% /i /s /y
+REM xcopy %esSrcDir% %eaTargetDir% /i /s /y
+REM xcopy %indSrcDir% %indTargetDir% /i /s /y
+
+robocopy %eaTargetDir% %esSrcDir% /E /is /it /XF "*.ex5"
+robocopy %indTargetDir% %indSrcDir% /E /is /it /XF "*.ex5"
 
 pause
 
