@@ -35,9 +35,7 @@ enum ENUM_TARGET
    ET180    =  180,     // R$ 180,00
    ET190    =  190,     // R$ 190,00
    ET200    =  200,     // R$ 200,00
-   ETNoLim  =  100000,  // Ilimitado
-   
-
+   ETMax    =  100000,  // R$ 100.000,00
 };
 
 input string        inpStartHour      = "9:15";            // Horário de Início
