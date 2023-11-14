@@ -16,18 +16,28 @@ MqlDateTime DateTimeStructure;
 
 enum ENUM_TARGET
 {
-   ET40     =  40,  // R$ 40,00
-   ET50     =  50,  // R$ 50,00
-   ET60     =  60,  // R$ 60,00
-   ET70     =  70,  // R$ 70,00
-   ET80     =  80,  // R$ 80,00
-   ET90     =  90,  // R$ 90,00
-   ET100    =  100, // R$ 100,00
-   ET110    =  110, // R$ 110,00
-   ET120    =  120, // R$ 120,00
-   ET130    =  130, // R$ 130,00
-   ET140    =  140, // R$ 140,00
-   ET150    =  150, // R$ 150,00
+   ET20     =  20,      // R$ 20,00
+   ET30     =  30,      // R$ 30,00
+   ET40     =  40,      // R$ 40,00
+   ET50     =  50,      // R$ 50,00
+   ET60     =  60,      // R$ 60,00
+   ET70     =  70,      // R$ 70,00
+   ET80     =  80,      // R$ 80,00
+   ET90     =  90,      // R$ 90,00
+   ET100    =  100,     // R$ 100,00
+   ET110    =  110,     // R$ 110,00
+   ET120    =  120,     // R$ 120,00
+   ET130    =  130,     // R$ 130,00
+   ET140    =  140,     // R$ 140,00
+   ET150    =  150,     // R$ 150,00
+   ET160    =  160,     // R$ 160,00
+   ET170    =  170,     // R$ 170,00
+   ET180    =  180,     // R$ 180,00
+   ET190    =  190,     // R$ 190,00
+   ET200    =  200,     // R$ 200,00
+   ETNoLim  =  100000,  // Ilimitado
+   
+
 };
 
 input string        inpStartHour      = "9:15";            // Horário de Início
@@ -62,10 +72,10 @@ double         rsi[];
 double         ma[];
 double         openTradePoint;
 int            lDelta = 1;
-
 double         pointsSL;
 double         pointsTP;
 double         pointsTarget;
+datetime       lastCandleTime;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -115,6 +125,8 @@ int OnInit()
    ObjectSetInteger  (0,"result",OBJPROP_YDISTANCE, 5);
    ObjectSetInteger  (0,"result",OBJPROP_CORNER,CORNER_RIGHT_LOWER);
    ObjectSetInteger  (0,"result",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER);   
+
+   lastCandleTime = 0;
 
   //---
    return(INIT_SUCCEEDED);
@@ -213,6 +225,7 @@ void OnTick()
             lresult = getResult(currentTime);
             sell = false;
          }
+         IsNewCandle();
       }
       
       else
@@ -220,19 +233,25 @@ void OnTick()
       //buy: the rsi is below the lowest level
       if(rsi[0] < inpRSI_BuyLevel)
       {
-         trade.Buy(inpVolume,_Symbol,lastTick.ask, lastTick.ask - pointsSL, lastTick.ask + pointsTP);
-         lastTradeTime  = TimeCurrent();
-         closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
-         buy = true;
+         if(IsNewCandle())
+         {
+            trade.Buy(inpVolume,_Symbol,lastTick.ask, lastTick.ask - pointsSL, lastTick.ask + pointsTP);
+            lastTradeTime  = TimeCurrent();
+            closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
+            buy = true;
+         }
       }
       else
       //sell: the rsi is above the highest level
       if(rsi[0] > inpRSI_SellLevel)
       {
-         trade.Sell(inpVolume,_Symbol,lastTick.bid, lastTick.bid + pointsSL, lastTick.bid - pointsTP);
-         lastTradeTime  = TimeCurrent();
-         closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
-         sell = true;
+         if(IsNewCandle())
+         {
+            trade.Sell(inpVolume,_Symbol,lastTick.bid, lastTick.bid + pointsSL, lastTick.bid - pointsTP);
+            lastTradeTime  = TimeCurrent();
+            closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
+            sell = true;
+         }
       }
    }
    
@@ -275,4 +294,20 @@ double getResult(datetime currentTime)
    ticket                  = HistoryDealGetTicket(lastDealIndex - 1);
    double firstDealProfit  = HistoryDealGetDouble(ticket, DEAL_PROFIT);
    return lastDealProfit - firstDealProfit;
+}
+
+//+------------------------------------------------------------------+
+bool IsNewCandle()
+{
+   datetime time[];
+   
+   if(CopyTime(Symbol(), Period(), 0, 1, time) < 1)
+      return false;
+   
+   if(time[0] == lastCandleTime)
+      return false;
+   
+   lastCandleTime = time[0];
+
+   return true;
 }
