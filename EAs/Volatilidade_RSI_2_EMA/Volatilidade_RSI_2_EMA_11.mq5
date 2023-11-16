@@ -12,7 +12,7 @@
 
 CTrade trade;
 
-MqlDateTime DateTimeStructure;
+MqlDateTime dateTimeStructure;
 
 enum ENUM_TARGET
 {
@@ -77,6 +77,7 @@ double         pointsSL;
 double         pointsTP;
 double         pointsTarget;
 datetime       lastCandleTime;
+long           expertAdvisorID = 0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -153,16 +154,16 @@ void OnTick()
 {
 //---
    datetime currentTime = TimeCurrent() % 86400;
-   double lresult = 0.0;
+   double lresult       = 0.0;
    
    ObjectSetString(0, "result",  OBJPROP_TEXT, "Resultado: R$ " + DoubleToString(dailyResult, 2));
    
-   TimeCurrent(DateTimeStructure);
-   if((DateTimeStructure.day_of_week == MONDAY     && !monday)    || 
-      (DateTimeStructure.day_of_week == TUESDAY    && !tuesday)   || 
-      (DateTimeStructure.day_of_week == WEDNESDAY  && !wednesday) || 
-      (DateTimeStructure.day_of_week == THURSDAY   && !thursday)  || 
-      (DateTimeStructure.day_of_week == FRIDAY     && !friday))
+   TimeCurrent(dateTimeStructure);
+   if((dateTimeStructure.day_of_week == MONDAY     && !monday)    || 
+      (dateTimeStructure.day_of_week == TUESDAY    && !tuesday)   || 
+      (dateTimeStructure.day_of_week == WEDNESDAY  && !wednesday) || 
+      (dateTimeStructure.day_of_week == THURSDAY   && !thursday)  || 
+      (dateTimeStructure.day_of_week == FRIDAY     && !friday))
    {    
       return;
    }
@@ -184,7 +185,7 @@ void OnTick()
             trade.PositionClose(_Symbol);
         if (!mailSent)
         {
-            SendMail("Meta Trader: Resultado diário","O total de trades de hoje resultou em R$ "+DoubleToString(dailyResult)+",00 bruto.");
+            SendMail("Meta Trader: Resultado diário","O total de trades de hoje resultou em R$ "+DoubleToString(dailyResult,2)+" bruto.");
             mailSent = true;
         }
 
@@ -218,85 +219,76 @@ void OnTick()
       {
          if(buy)
          {
-            lresult = getResult(currentTime);
             buy = false;
          }
          if(sell)
          {
-            lresult = getResult(currentTime);
             sell = false;
          }
          IsNewCandle();
+         lresult = result(currentTime,expertAdvisorID);
       }
       
       else
-      
-      //buy: the rsi is below the lowest level
-      if(rsi[0] < inpRSI_BuyLevel)
       {
-         if(IsNewCandle())
+         //buy: the rsi is below the lowest level
+         if(rsi[0] < inpRSI_BuyLevel)
          {
-            trade.Buy(inpVolume,_Symbol,lastTick.ask, lastTick.ask - pointsSL, lastTick.ask + pointsTP);
-            lastTradeTime  = TimeCurrent();
-            closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
-            buy = true;
+            if(IsNewCandle())
+            {
+               trade.Buy(inpVolume,_Symbol,lastTick.ask, lastTick.ask - pointsSL, lastTick.ask + pointsTP);
+               expertAdvisorID = HistoryDealGetInteger(HistoryDealsTotal() - 1, DEAL_MAGIC);
+               lastTradeTime  = TimeCurrent();
+               closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
+               buy = true;
+            }
          }
-      }
-      else
-      //sell: the rsi is above the highest level
-      if(rsi[0] > inpRSI_SellLevel)
-      {
-         if(IsNewCandle())
+         else
+         //sell: the rsi is above the highest level
+         if(rsi[0] > inpRSI_SellLevel)
          {
-            trade.Sell(inpVolume,_Symbol,lastTick.bid, lastTick.bid + pointsSL, lastTick.bid - pointsTP);
-            lastTradeTime  = TimeCurrent();
-            closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
-            sell = true;
+            if(IsNewCandle())
+            {
+               trade.Sell(inpVolume,_Symbol,lastTick.bid, lastTick.bid + pointsSL, lastTick.bid - pointsTP);
+               expertAdvisorID = HistoryDealGetInteger(HistoryDealsTotal() - 1, DEAL_MAGIC);
+               lastTradeTime  = TimeCurrent();
+               closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
+               sell = true;
+            }
          }
       }
    }
-   
+      
    else
-   
-   // when the candle closes above the average
-   if(TimeCurrent() > closeTradeTime)
    {
-      if(buy && closePrice >= ma[1])
+   // when the candle closes above the average
+      if(TimeCurrent() > closeTradeTime)
       {
-         trade.PositionClose(_Symbol);
-         buy = false;   
-         lresult = getResult(currentTime);
-      } 
-      // when the candle closes below the average
-      if(sell && closePrice <= ma[1])
-      {
-         trade.PositionClose(_Symbol);
-         sell = false;   
-         lresult = getResult(currentTime);
+         if(buy && closePrice >= ma[1])
+         {
+            trade.PositionClose(_Symbol);
+            buy = false;   
+            lresult = result(currentTime,expertAdvisorID);
+         } 
+         // when the candle closes below the average
+         if(sell && closePrice <= ma[1])
+         {
+            trade.PositionClose(_Symbol);
+            sell = false;   
+            lresult = result(currentTime,expertAdvisorID);
+         }
       }
    }
+   
    if(lresult != 0)
    {
-      dailyResult += lresult;
+      dailyResult = lresult;
       
       if(dailyResult < 0 )  ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrRed);
       else                  ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrGreen);
    }
 }
  
-//+------------------------------------------------------------------+
-
-double getResult(datetime currentTime)
-{
-   HistorySelect(TimeCurrent()-currentTime,TimeCurrent());
-   int lastDealIndex       = HistoryDealsTotal() - 1;
-   ulong ticket            = HistoryDealGetTicket(lastDealIndex);
-   double lastDealProfit   = HistoryDealGetDouble(ticket, DEAL_PROFIT);
-   ticket                  = HistoryDealGetTicket(lastDealIndex - 1);
-   double firstDealProfit  = HistoryDealGetDouble(ticket, DEAL_PROFIT);
-   return lastDealProfit - firstDealProfit;
-}
-
 //+------------------------------------------------------------------+
 bool IsNewCandle()
 {
@@ -311,4 +303,24 @@ bool IsNewCandle()
    lastCandleTime = time[0];
 
    return true;
+}
+
+// Return the result at the day
+double result(datetime currentTime, long xpAdvID)
+{
+ double res       = 0;
+ datetime today   = TimeCurrent() - currentTime;
+
+ if (HistorySelect(today, TimeCurrent())){
+   int totalDeals = HistoryDealsTotal() - 1;
+   for (int i = totalDeals; i >= 0; i--)
+   {
+     const ulong ticket = HistoryDealGetTicket(i);
+     
+     if((HistoryDealGetInteger(ticket, DEAL_MAGIC) == xpAdvID) && (HistoryDealGetString(ticket, DEAL_SYMBOL) == Symbol()))
+       res += HistoryDealGetDouble(ticket, DEAL_PROFIT);
+   }
+ }
+     
+  return(res);
 }
