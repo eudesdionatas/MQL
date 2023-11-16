@@ -232,7 +232,7 @@ void OnTick()
       else
       
       //buy: the rsi is below the lowest level
-      if(rsi[0] < inpRSI_BuyLevel)
+      if(rsi[0] < inpRSI_BuyLevel && closePrice <= ma[1])
       {
          if(IsNewCandle())
          {
@@ -244,7 +244,7 @@ void OnTick()
       }
       else
       //sell: the rsi is above the highest level
-      if(rsi[0] > inpRSI_SellLevel)
+      if(rsi[0] > inpRSI_SellLevel && closePrice >= ma[1])
       {
          if(IsNewCandle())
          {
@@ -261,14 +261,14 @@ void OnTick()
    // when the candle closes above the average
    if(TimeCurrent() > closeTradeTime)
    {
-      if(buy && closePrice >= ma[0])
+      if(buy && closePrice >= ma[1])
       {
          trade.PositionClose(_Symbol);
          buy = false;   
          lresult = getResult(currentTime);
       } 
       // when the candle closes below the average
-      if(sell && closePrice <= ma[0])
+      if(sell && closePrice <= ma[1])
       {
          trade.PositionClose(_Symbol);
          sell = false;   
