@@ -232,7 +232,7 @@ void OnTick()
       else
       
       //buy: the rsi is below the lowest level
-      if(rsi[0] < inpRSI_BuyLevel && closePrice <= ma[1])
+      if(rsi[0] < inpRSI_BuyLevel)
       {
          if(IsNewCandle())
          {
@@ -244,7 +244,7 @@ void OnTick()
       }
       else
       //sell: the rsi is above the highest level
-      if(rsi[0] > inpRSI_SellLevel && closePrice >= ma[1])
+      if(rsi[0] > inpRSI_SellLevel)
       {
          if(IsNewCandle())
          {
