@@ -322,5 +322,5 @@ double result(datetime currentTime, long xpAdvID)
    }
  }
      
-  return(res);
+  return res;
 }
