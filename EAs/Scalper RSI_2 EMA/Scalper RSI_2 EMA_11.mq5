@@ -186,7 +186,9 @@ void OnTick()
             trade.PositionClose(_Symbol);
         if (!mailSent)
         {
-            SendMail("Meta Trader: Resultado diário","O total de trades de hoje resultou em R$ "+DoubleToString(dailyResult,2)+" bruto.");
+            string content = "O total de trades de hoje resultou em R$ ";
+            SendMail("Robô Scalper: Resultado diário",
+                     content + DoubleToString(dailyResult,2)+" bruto.");            
             mailSent = true;
         }
 
