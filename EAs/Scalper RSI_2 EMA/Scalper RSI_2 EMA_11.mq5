@@ -141,6 +141,7 @@ void OnDeinit(const int reason)
 //---
 
    ObjectDelete(0,"target");
+   ObjectDelete(0,"target_");
    ObjectDelete(0,"result");
    
    IndicatorRelease(hndMA);
