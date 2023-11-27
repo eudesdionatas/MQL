@@ -85,9 +85,8 @@ int OnInit()
       return(INIT_FAILED);
    }
 
-   //---
-   // Socket=CClientSocket::Socket();
-   // Socket.Config("localhost", 9092);
+   Socket=CClientSocket::Socket();
+   Socket.Config("localhost", 9092);
 
    nCandlesToSocket = 10;   
    
@@ -95,7 +94,7 @@ int OnInit()
 
    lastCandleTime = 0;
 
-   //UpdateResults(TimeCurrent()% 86400);
+   UpdateResults(TimeCurrent()% 86400);
 
   //---
    return(INIT_SUCCEEDED);
