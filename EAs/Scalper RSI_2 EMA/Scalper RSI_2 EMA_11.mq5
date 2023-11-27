@@ -5,57 +5,34 @@
 //+------------------------------------------------------------------+
 #property copyright "Lucas, Eudes e Alexandre"
 #property link      "https://www.mql5.com"
-#property version   "1.05"
+#property version   "1.2"
 
 #include <Trade/Trade.mqh>
 #include <Math/Stat/Math.mqh>
+#include "..\\Socket\\ClientSocket.mqh"
+#include "..\\Socket\\JAson.mqh"
 
 CTrade trade;
 
 MqlDateTime dateTimeStructure;
 
-enum ENUM_TARGET
-{
-   ET20     =  20,      // R$ 20,00
-   ET30     =  30,      // R$ 30,00
-   ET40     =  40,      // R$ 40,00
-   ET50     =  50,      // R$ 50,00
-   ET60     =  60,      // R$ 60,00
-   ET70     =  70,      // R$ 70,00
-   ET80     =  80,      // R$ 80,00
-   ET90     =  90,      // R$ 90,00
-   ET100    =  100,     // R$ 100,00
-   ET110    =  110,     // R$ 110,00
-   ET120    =  120,     // R$ 120,00
-   ET130    =  130,     // R$ 130,00
-   ET140    =  140,     // R$ 140,00
-   ET150    =  150,     // R$ 150,00
-   ET160    =  160,     // R$ 160,00
-   ET170    =  170,     // R$ 170,00
-   ET180    =  180,     // R$ 180,00
-   ET190    =  190,     // R$ 190,00
-   ET200    =  200,     // R$ 200,00
-   ET300    =  300,     // R$ 300,00
-   ET400    =  400,     // R$ 400,00
-   ET500    =  500,     // R$ 500,00
-   ETMax    =  100000,  // R$ 100.000,00
-};
 
-input string        inpStartHour      = "9:15";            // Horário de Início
-input string        inpEndHour        = "14:00";           // Horário de encerramento
-input int           inpRSI_Period     = 2;                 // Período do RSI
-input int           inpEMA            = 11;                // Período da média
-input int           inpRSI_BuyLevel   = 5;                 // Mínima do RSI
-input int           inpRSI_SellLevel  = 95;                // Máxima do RSI
-input int           inpVolume         = 1;                 // Volume
-input ENUM_TARGET   inpDailyTarget    = ET50;              // Alvo diário por papel      
-input double        inpTP             = 700;               // Take Profit
-input double        inpSL             = 500;               // Stop Loss
-input bool          monday            = true;              // Operar segunda-feira
-input bool          tuesday           = true;              // Operar terça-feira
-input bool          wednesday         = true;              // Operar quarta-feira
-input bool          thursday          = true;              // Operar quinta-feira
-input bool          friday            = true;              // Operar sexta-feira
+input string   inpStartHour          = "9:15";     // Horário de Início
+input string   inpEndHour            = "17:45";    // Horário de encerramento
+input int      inpRSI_Period         = 2;          // Período do RSI
+input int      inpEMA                = 11;         // Período da média
+input int      inpRSI_BuyLevel       = 5;          // Mínima do RSI
+input int      inpRSI_SellLevel      = 95;         // Máxima do RSI
+input int      inpVolume             = 1;          // Número de papéis
+input int      inpPointsDailyTarget  = 200;        // Alvo diário em pontos
+input int      inpPointsDailyLoss    = 50;         // Loss diário em pontos            
+input double   inpTP                 = 700;        // Take Profit
+input double   inpSL                 = 500;        // Stop Loss
+input bool     monday                = true;       // Operar segunda-feira
+input bool     tuesday               = true;       // Operar terça-feira
+input bool     wednesday             = true;       // Operar quarta-feira
+input bool     thursday              = true;       // Operar quinta-feira
+input bool     friday                = true;       // Operar sexta-feira
 
 
 datetime       lastTradeTime     = 0;
@@ -68,7 +45,8 @@ datetime       endTime           = StringToTime(inpEndHour)    %  86400;
 int            hndRSI            = 0;
 int            hndMA             = 0;
 int            customMA          = 0;
-double         dailyResult       = 0;
+double         cashDailyResult   = 0;
+double         pointsDailyResult = 0;
 double         rsi[];
 double         ma[];
 double         openTradePoint;
@@ -77,16 +55,22 @@ double         pointsSL;
 double         pointsTP;
 double         pointsTarget;
 datetime       lastCandleTime;
-long           expertAdvisorID = 0;
+ulong          expertAdvisorID;
+
+CClientSocket* Socket;
+int nCandlesToSocket;
+MqlRates rates[];
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   pointsSL     = inpSL * Point();
-   pointsTP     = inpTP * Point();
-   pointsTarget = inpDailyTarget * Point();
+  
+   pointsSL          = inpSL * Point();
+   pointsTP          = inpTP * Point();
+   pointsTarget      = inpPointsDailyTarget * Point();
+   expertAdvisorID   = 1546;
    
    ArraySetAsSeries(rsi,true);
    ArraySetAsSeries(ma, true);
@@ -100,35 +84,18 @@ int OnInit()
       Print("iRSI / iMA failed! Error: ", GetLastError());
       return(INIT_FAILED);
    }
-   
-   
-   ObjectCreate      (0,"target_",OBJ_LABEL,  0, 0, 0);
-   ObjectSetString   (0,"target_",OBJPROP_TEXT, "R$ " + IntegerToString(inpDailyTarget) + 
-                        " x " + IntegerToString(inpVolume) + (inpVolume > 1 ? " papéis" : " papel") );
-   ObjectSetInteger  (0,"target_",OBJPROP_COLOR, clrBlue);
-   ObjectSetInteger  (0,"target_",OBJPROP_XDISTANCE, 5);
-   ObjectSetInteger  (0,"target_",OBJPROP_YDISTANCE, 20);
-   ObjectSetInteger  (0,"target_",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
-   ObjectSetInteger  (0,"target_",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);   
 
-   ObjectCreate      (0,"target",OBJ_LABEL,  0, 0, 0);
-   ObjectSetString   (0,"target",OBJPROP_TEXT, "Alvo: R$ " + IntegerToString(inpVolume * inpDailyTarget));
-   ObjectSetInteger  (0,"target",OBJPROP_COLOR, clrBlue);
-   ObjectSetInteger  (0,"target",OBJPROP_XDISTANCE, 5);
-   ObjectSetInteger  (0,"target",OBJPROP_YDISTANCE, 40);
-   ObjectSetInteger  (0,"target",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
-   ObjectSetInteger  (0,"target",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);
-   
+   //---
+   // Socket=CClientSocket::Socket();
+   // Socket.Config("localhost", 9092);
 
-   ObjectCreate      (0,"result",OBJ_LABEL,  0, 0, 0);
-   ObjectSetString   (0,"result",OBJPROP_TEXT, "Resultado: R$" + DoubleToString(dailyResult,2));
-   ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrBlack);
-   ObjectSetInteger  (0,"result",OBJPROP_XDISTANCE, 5);
-   ObjectSetInteger  (0,"result",OBJPROP_YDISTANCE, 5);
-   ObjectSetInteger  (0,"result",OBJPROP_CORNER,CORNER_RIGHT_LOWER);
-   ObjectSetInteger  (0,"result",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER);   
+   nCandlesToSocket = 10;   
+   
+   AssignLabels();
 
    lastCandleTime = 0;
+
+   //UpdateResults(TimeCurrent()% 86400);
 
   //---
    return(INIT_SUCCEEDED);
@@ -141,11 +108,17 @@ void OnDeinit(const int reason)
 //---
 
    ObjectDelete(0,"target");
-   ObjectDelete(0,"target_");
+   ObjectDelete(0,"targetPoints");
+   ObjectDelete(0,"targetCash");
    ObjectDelete(0,"result");
+   ObjectDelete(0,"resultPoints");
+   ObjectDelete(0,"resultCash");
    
    IndicatorRelease(hndMA);
    IndicatorRelease(hndRSI);
+
+   //---
+   CClientSocket::DeleteSocket();
    
 }
 //+------------------------------------------------------------------+
@@ -154,11 +127,9 @@ void OnDeinit(const int reason)
 void OnTick()
 {
 //---
+   bool     inOperation = false;
    datetime currentTime = TimeCurrent() % 86400;
-   double lresult       = 0.0;
-   
-   ObjectSetString(0, "result",  OBJPROP_TEXT, "Resultado: R$ " + DoubleToString(dailyResult, 2));
-   
+
    TimeCurrent(dateTimeStructure);
    if((dateTimeStructure.day_of_week == MONDAY     && !monday)    || 
       (dateTimeStructure.day_of_week == TUESDAY    && !tuesday)   || 
@@ -172,15 +143,17 @@ void OnTick()
    // current time is less than or equal to the start time
    if( currentTime <= startTime )
    {
-      dailyResult = 0;
-      ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrBlack);
+      pointsDailyResult = 0;
+      cashDailyResult = 0;
+      UpdateResults(currentTime);
       return;
    }
    
-   int positions = PositionsTotal();
+   // int positions = PositionsTotal();
+   int positions = GetNumberOfOpenOrders(expertAdvisorID, Symbol());
 
    // current time is greater than or equal to the closing time or the gain is greater than or equal to the daily target 
-   if(currentTime >= endTime || dailyResult >= (inpDailyTarget * inpVolume))
+   if(currentTime >= endTime || pointsDailyResult >= inpPointsDailyTarget || pointsDailyResult <= (inpPointsDailyLoss) * -1)
    {
         if(positions > 0)
             trade.PositionClose(_Symbol);
@@ -188,11 +161,11 @@ void OnTick()
         {
             string content = "O total de trades de hoje resultou em R$ ";
             SendMail("Robô Scalper: Resultado diário",
-                     content + DoubleToString(dailyResult,2)+" bruto.");            
+                     content + DoubleToString(cashDailyResult,2)+" bruto.");            
             mailSent = true;
         }
 
-        buy = false;
+        buy  = false;
         sell = false;
 
         return;
@@ -229,7 +202,7 @@ void OnTick()
             sell = false;
          }
          IsNewCandle();
-         lresult = result(currentTime,expertAdvisorID);
+         UpdateResults(currentTime);
       }
       
       else
@@ -239,11 +212,14 @@ void OnTick()
          {
             if(IsNewCandle())
             {
-               trade.Buy(inpVolume,_Symbol,lastTick.ask, lastTick.ask - pointsSL, lastTick.ask + pointsTP);
-               expertAdvisorID = HistoryDealGetInteger(HistoryDealsTotal() - 1, DEAL_MAGIC);
-               lastTradeTime  = TimeCurrent();
-               closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
-               buy = true;
+               if(IsToOperate())
+               {
+                  trade.SetExpertMagicNumber(expertAdvisorID);
+                  trade.Buy(inpVolume,_Symbol,lastTick.ask, lastTick.ask - pointsSL, lastTick.ask + pointsTP);
+                  lastTradeTime  = TimeCurrent();
+                  closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
+                  buy = true;
+               }
             }
          }
          else
@@ -252,11 +228,14 @@ void OnTick()
          {
             if(IsNewCandle())
             {
-               trade.Sell(inpVolume,_Symbol,lastTick.bid, lastTick.bid + pointsSL, lastTick.bid - pointsTP);
-               expertAdvisorID = HistoryDealGetInteger(HistoryDealsTotal() - 1, DEAL_MAGIC);
-               lastTradeTime  = TimeCurrent();
-               closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
-               sell = true;
+               if(IsToOperate())
+               {
+                  trade.SetExpertMagicNumber(expertAdvisorID);
+                  trade.Sell(inpVolume,_Symbol,lastTick.bid, lastTick.bid + pointsSL, lastTick.bid - pointsTP);
+                  lastTradeTime  = TimeCurrent();
+                  closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
+                  sell = true;
+               }
             }
          }
       }
@@ -271,28 +250,226 @@ void OnTick()
          {
             trade.PositionClose(_Symbol);
             buy = false;   
-            lresult = result(currentTime,expertAdvisorID);
+            UpdateResults(currentTime);
          } 
          // when the candle closes below the average
          if(sell && closePrice <= ma[1])
          {
             trade.PositionClose(_Symbol);
             sell = false;   
-            lresult = result(currentTime,expertAdvisorID);
+            UpdateResults(currentTime);
          }
       }
    }
-   
-   if(lresult != 0)
+}
+
+void UpdateResults (datetime current)
+{
+   pointsDailyResult += result(expertAdvisorID, current);
+   cashDailyResult   += (pointsDailyResult/5) * inpVolume;
+
+   if(pointsDailyResult == 0)
    {
-      dailyResult = lresult;
-      
-      if(dailyResult < 0 )  ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrRed);
-      else                  ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrGreen);
+      ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrBlack);
+      ObjectSetInteger  (0,"resultPoints",OBJPROP_COLOR, clrBlack);
+      ObjectSetInteger  (0,"resultCash",OBJPROP_COLOR, clrBlack);
    }
+   else if(pointsDailyResult < 0 )
+   {
+      ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrRed);
+      ObjectSetInteger  (0,"resultPoints",OBJPROP_COLOR, clrRed);
+      ObjectSetInteger  (0,"resultCash",OBJPROP_COLOR, clrRed);
+   }  
+   else 
+   {
+      ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrGreen);
+      ObjectSetInteger  (0,"resultPoints",OBJPROP_COLOR, clrGreen);
+      ObjectSetInteger  (0,"resultCash",OBJPROP_COLOR, clrGreen);
+   }
+      
+   ObjectSetString(0, "resultPoints",  OBJPROP_TEXT, DoubleToString(pointsDailyResult, 0) + " pontos");
+   ObjectSetString(0, "resultCash",  OBJPROP_TEXT, "R$ " + DoubleToString(cashDailyResult, 2));
+
 }
  
-//+------------------------------------------------------------------+
+// Return the result at the day at points
+double result(ulong xpAdvID, datetime current)
+{
+   double res       = 0;
+   datetime today   = TimeCurrent() - current;
+
+ if (HistorySelect(today, TimeCurrent())){
+   int totalDeals = HistoryDealsTotal()-1;
+   for (int i = 1; i <= totalDeals; i++)
+   {
+     const ulong ticket = HistoryDealGetTicket(i);
+     ulong magicNumber  = HistoryDealGetInteger(ticket, DEAL_MAGIC);
+
+     if((magicNumber == xpAdvID) && (HistoryDealGetString(ticket, DEAL_SYMBOL) == Symbol())
+         )
+       res += HistoryDealGetDouble(ticket, DEAL_PROFIT);
+   }
+ }
+  res = (res/inpVolume) * 5;
+  return res;
+}
+
+bool IsToOperate()
+{
+   if(CopyRates(_Symbol, _Period, 0, nCandlesToSocket, rates) < nCandlesToSocket)
+      return(false);
+   
+   CJAVal data;
+   CJAVal item;
+   for(int i = nCandlesToSocket-1; i >= 0; i--)
+   {
+      //item["time"  ] = datetime(rates[i].time       );
+      item["open"  ] = int(rates[i].open       );
+      item["high"  ] = int(rates[i].high       );
+      item["low"   ] = int(rates[i].low        );
+      item["close" ] = int(rates[i].close      );
+      item["tick"  ] = int(rates[i].tick_volume);
+      item["volume"] = int(rates[i].real_volume);
+      
+      data[IntegerToString(i)].Set(item);
+      
+      item.Clear();
+   }
+   
+   string serialized = data.Serialize();
+   
+   Print("serialized: ", serialized);
+   
+   if(!Socket.IsConnected())
+   {
+      Print("Socket.IsConnected() (line ", __LINE__, ") error: ", GetLastError());
+      return(false);
+   }
+   
+   //bool send = Socket.SocketSend(serialized);
+   //Print("send: ", send);
+   //if(send)
+   if(Socket.SocketSend(serialized))
+   {
+      string yhat = Socket.SocketReceive();
+      Print("Value of Prediction: ", yhat);
+      
+      if(yhat == "True" )
+      {
+         Print("IA mandou operar!");
+         return(true);
+      }
+      else
+      {
+         Print("IA mandou NÃO operar!");
+      }
+   }
+   
+   return(false);
+}
+
+void AssignLabels()
+{
+   ObjectCreate      (0,"target",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"target",OBJPROP_TEXT, "Alvo diário");
+   ObjectSetInteger  (0,"target",OBJPROP_COLOR, clrBlue);
+   ObjectSetInteger  (0,"target",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"target",OBJPROP_YDISTANCE, 20);
+   ObjectSetInteger  (0,"target",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
+   ObjectSetInteger  (0,"target",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);   
+   
+   ObjectCreate      (0,"targetPoints",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"targetPoints",OBJPROP_TEXT, IntegerToString(inpPointsDailyTarget) + " pontos");
+   ObjectSetInteger  (0,"targetPoints",OBJPROP_COLOR, clrBlue);
+   ObjectSetInteger  (0,"targetPoints",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"targetPoints",OBJPROP_YDISTANCE, 40);
+   ObjectSetInteger  (0,"targetPoints",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
+   ObjectSetInteger  (0,"targetPoints",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);
+
+   ObjectCreate      (0,"targetCash",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"targetCash",OBJPROP_TEXT, IntegerToString(inpVolume) + " x R$ " + IntegerToString(inpPointsDailyTarget/5));
+   ObjectSetInteger  (0,"targetCash",OBJPROP_COLOR, clrBlue);
+   ObjectSetInteger  (0,"targetCash",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"targetCash",OBJPROP_YDISTANCE, 60);
+   ObjectSetInteger  (0,"targetCash",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
+   ObjectSetInteger  (0,"targetCash",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);
+
+   /************************************************************************************/
+   
+   ObjectCreate      (0,"loss",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"loss",OBJPROP_TEXT, "Loss diário");
+   ObjectSetInteger  (0,"loss",OBJPROP_COLOR, clrBlack);
+   ObjectSetInteger  (0,"loss",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"loss",OBJPROP_YDISTANCE, 100);
+   ObjectSetInteger  (0,"loss",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
+   ObjectSetInteger  (0,"loss",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);   
+   
+   ObjectCreate      (0,"lossPoints",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"lossPoints",OBJPROP_TEXT, IntegerToString(inpPointsDailyLoss) + " pontos");
+   ObjectSetInteger  (0,"lossPoints",OBJPROP_COLOR, clrBlack);
+   ObjectSetInteger  (0,"lossPoints",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"lossPoints",OBJPROP_YDISTANCE, 120);
+   ObjectSetInteger  (0,"lossPoints",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
+   ObjectSetInteger  (0,"lossPoints",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);
+
+   ObjectCreate      (0,"lossCash",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"lossCash",OBJPROP_TEXT, IntegerToString(inpVolume) + " x R$ " + IntegerToString(inpPointsDailyLoss/5));
+   ObjectSetInteger  (0,"lossCash",OBJPROP_COLOR, clrBlack);
+   ObjectSetInteger  (0,"lossCash",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"lossCash",OBJPROP_YDISTANCE, 140);
+   ObjectSetInteger  (0,"lossCash",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
+   ObjectSetInteger  (0,"lossCash",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);
+
+   /************************************************************************************/
+
+   ObjectCreate      (0,"result",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"result",OBJPROP_TEXT, "Resultado");
+   ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrBlack);
+   ObjectSetInteger  (0,"result",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"result",OBJPROP_YDISTANCE, 45);
+   ObjectSetInteger  (0,"result",OBJPROP_CORNER,CORNER_RIGHT_LOWER);
+   ObjectSetInteger  (0,"result",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER);    
+
+   ObjectCreate      (0,"resultPoints",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"resultPoints",OBJPROP_TEXT, DoubleToString(pointsDailyResult,0) + " pontos");
+   ObjectSetInteger  (0,"resultPoints",OBJPROP_COLOR, clrBlack);
+   ObjectSetInteger  (0,"resultPoints",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"resultPoints",OBJPROP_YDISTANCE, 25);
+   ObjectSetInteger  (0,"resultPoints",OBJPROP_CORNER,CORNER_RIGHT_LOWER);
+   ObjectSetInteger  (0,"resultPoints",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER);    
+
+   ObjectCreate      (0,"resultCash",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"resultCash",OBJPROP_TEXT, "R$ " + DoubleToString(cashDailyResult,2));
+   ObjectSetInteger  (0,"resultCash",OBJPROP_COLOR, clrBlack);
+   ObjectSetInteger  (0,"resultCash",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"resultCash",OBJPROP_YDISTANCE, 5);
+   ObjectSetInteger  (0,"resultCash",OBJPROP_CORNER,CORNER_RIGHT_LOWER);
+   ObjectSetInteger  (0,"resultCash",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER); 
+
+}
+
+int GetNumberOfOpenOrders(ulong magicNumber, string symbol)
+{
+   int openTrades = 0;
+
+   for (int i = 0; i <  PositionsTotal(); i++)
+   {
+      ulong ticket = PositionGetTicket(i);
+
+      if(PositionSelectByTicket(ticket))
+      {
+         // Successfully select the position
+         if(PositionGetInteger(POSITION_MAGIC) == magicNumber) 
+         {
+            // Open trade is from the Expert with our magicNumber
+            if(PositionGetString(POSITION_SYMBOL) == symbol)
+               openTrades++;
+         }
+      }
+   }
+   return openTrades;
+}
+
 bool IsNewCandle()
 {
    datetime time[];
@@ -306,24 +483,4 @@ bool IsNewCandle()
    lastCandleTime = time[0];
 
    return true;
-}
-
-// Return the result at the day
-double result(datetime currentTime, long xpAdvID)
-{
- double res       = 0;
- datetime today   = TimeCurrent() - currentTime;
-
- if (HistorySelect(today, TimeCurrent())){
-   int totalDeals = HistoryDealsTotal() - 1;
-   for (int i = totalDeals; i >= 0; i--)
-   {
-     const ulong ticket = HistoryDealGetTicket(i);
-     
-     if((HistoryDealGetInteger(ticket, DEAL_MAGIC) == xpAdvID) && (HistoryDealGetString(ticket, DEAL_SYMBOL) == Symbol()))
-       res += HistoryDealGetDouble(ticket, DEAL_PROFIT);
-   }
- }
-     
-  return res;
 }
