@@ -109,6 +109,9 @@ void OnDeinit(const int reason)
    ObjectDelete(0,"target");
    ObjectDelete(0,"targetPoints");
    ObjectDelete(0,"targetCash");
+   ObjectDelete(0,"loss");
+   ObjectDelete(0,"lossPoints");
+   ObjectDelete(0,"lossCash");
    ObjectDelete(0,"result");
    ObjectDelete(0,"resultPoints");
    ObjectDelete(0,"resultCash");
@@ -148,7 +151,6 @@ void OnTick()
       return;
    }
    
-   // int positions = PositionsTotal();
    int positions = GetNumberOfOpenOrders(expertAdvisorID, Symbol());
 
    // current time is greater than or equal to the closing time or the gain is greater than or equal to the daily target 
