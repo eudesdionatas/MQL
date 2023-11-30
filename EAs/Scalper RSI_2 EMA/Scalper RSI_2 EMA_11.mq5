@@ -167,6 +167,7 @@ void OnTick()
         if(positions > 0)
             trade.PositionClose(_Symbol);
             UpdateResults(dayCurrentTime);
+            Print("ayCurrentTime >= endTime || pointsDailyResult >= inpPointsDailyTarget || pointsDailyResult <= (inpPointsDailyLoss) * -1");
         if (!mailSent)
         {
             string content = "O total de trades de hoje resultou em R$ ";
