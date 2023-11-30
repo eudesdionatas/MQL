@@ -166,6 +166,7 @@ void OnTick()
    {
         if(positions > 0)
             trade.PositionClose(_Symbol);
+            UpdateResults(dayCurrentTime);
         if (!mailSent)
         {
             string content = "O total de trades de hoje resultou em R$ ";
