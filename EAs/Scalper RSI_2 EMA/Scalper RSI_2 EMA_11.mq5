@@ -25,7 +25,7 @@ input int      inpRSI_BuyLevel       = 5;          // Mínima do RSI
 input int      inpRSI_SellLevel      = 95;         // Máxima do RSI
 input int      inpVolume             = 1;          // Número de papéis
 input int      inpPointsDailyTarget  = 400;        // Alvo diário em pontos
-input int      inpPointsDailyLoss    = 200;         // Loss diário em pontos            
+input int      inpPointsDailyLoss    = 200;        // Loss diário em pontos            
 input double   inpTP                 = 700;        // Take Profit
 input double   inpSL                 = 500;        // Stop Loss
 input bool     monday                = true;       // Operar segunda-feira
@@ -88,7 +88,7 @@ int OnInit()
    Socket=CClientSocket::Socket();
    Socket.Config("localhost", 9092);
 
-   nCandlesToSocket = 10;   
+   nCandlesToSocket = 15;   
    
    AssignLabels();
 
@@ -161,8 +161,7 @@ void OnTick()
         if (!mailSent)
         {
             string content = "O total de trades de hoje resultou em R$ ";
-            SendMail("Robô Scalper: Resultado diário",
-                     content + DoubleToString(cashDailyResult,2)+" bruto.");            
+            SendMail("Robô Scalper: Resultado diário", content + DoubleToString(cashDailyResult,2)+" bruto.");            
             mailSent = true;
         }
 
@@ -266,8 +265,8 @@ void OnTick()
 
 void UpdateResults (datetime current)
 {
-   pointsDailyResult += result(expertAdvisorID, current);
-   cashDailyResult   += (pointsDailyResult/5) * inpVolume;
+   pointsDailyResult = result(expertAdvisorID, current);
+   cashDailyResult   = (pointsDailyResult/5) * inpVolume;
 
    if(pointsDailyResult == 0)
    {
@@ -298,16 +297,33 @@ double result(ulong xpAdvID, datetime current)
 {
    double res       = 0;
    datetime today   = TimeCurrent() - current;
+   bool manuallyClosed;
 
  if (HistorySelect(today, TimeCurrent())){
    int totalDeals = HistoryDealsTotal()-1;
    for (int i = 1; i <= totalDeals; i++)
    {
-     const ulong ticket = HistoryDealGetTicket(i);
-     ulong magicNumber  = HistoryDealGetInteger(ticket, DEAL_MAGIC);
+      ulong ticket          = HistoryDealGetTicket(i);
+      ulong magicNumber     = HistoryDealGetInteger(ticket, DEAL_MAGIC);
 
-     if((magicNumber == xpAdvID) && (HistoryDealGetString(ticket, DEAL_SYMBOL) == Symbol())
-         )
+      if(HistoryDealGetInteger(ticket, DEAL_REASON) == DEAL_REASON_CLIENT)      
+      {
+         for(int x = 1; x <= totalDeals - 1; x++)
+         {
+            ulong previousTicket  = HistoryDealGetTicket(x);
+            
+            if (HistoryDealGetInteger(previousTicket, DEAL_MAGIC) == magicNumber)
+            {
+               ulong previousTP      = HistoryDealGetDouble(previousTicket, DEAL_TP);
+               ulong previousSL      = HistoryDealGetDouble(previousTicket, DEAL_SL);
+               manuallyClosed        = HistoryDealGetDouble(ticket, DEAL_TP) == previousTP && 
+                                       HistoryDealGetDouble(ticket, DEAL_SL) == previousSL;
+            }
+
+         }
+      }
+
+     if(((magicNumber == xpAdvID) && (HistoryDealGetString(ticket, DEAL_SYMBOL) == Symbol())) || manuallyClosed)
        res += HistoryDealGetDouble(ticket, DEAL_PROFIT);
    }
  }
