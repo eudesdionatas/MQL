@@ -295,9 +295,9 @@ void UpdateResults (datetime current)
 // Return the result at the day at points
 double result(ulong xpAdvID, datetime current)
 {
-   double res       = 0;
-   datetime today   = TimeCurrent() - current;
-   bool manuallyClosed;
+   double res           = 0;
+   datetime today       = TimeCurrent() - current;
+   bool manuallyClosed  = false;
 
  if (HistorySelect(today, TimeCurrent())){
    int totalDeals = HistoryDealsTotal()-1;
