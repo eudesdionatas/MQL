@@ -56,6 +56,7 @@ double         pointsTP;
 double         pointsTarget;
 datetime       lastCandleTime;
 ulong          expertAdvisorID;
+bool asdf = false;
 
 CClientSocket* Socket;
 int nCandlesToSocket;
@@ -94,7 +95,8 @@ int OnInit()
 
    lastCandleTime = 0;
 
-   UpdateResults(TimeCurrent()% 86400);
+   Print("Update Results OnInit");
+   UpdateResults(TimeCurrent() % 86400);
 
   //---
    return(INIT_SUCCEEDED);
@@ -105,7 +107,6 @@ int OnInit()
 void OnDeinit(const int reason)
 {
 //---
-
    ObjectDelete(0,"target");
    ObjectDelete(0,"targetPoints");
    ObjectDelete(0,"targetCash");
@@ -130,7 +131,7 @@ void OnTick()
 {
 //---
    bool     inOperation = false;
-   datetime currentTime = TimeCurrent() % 86400;
+   datetime dayCurrentTime = TimeCurrent() % 86400;
 
    TimeCurrent(dateTimeStructure);
    if((dateTimeStructure.day_of_week == MONDAY     && !monday)    || 
@@ -143,18 +144,25 @@ void OnTick()
    }
    
    // current time is less than or equal to the start time
-   if( currentTime <= startTime )
+   if( dayCurrentTime <= startTime )
    {
       pointsDailyResult = 0;
       cashDailyResult = 0;
-      UpdateResults(currentTime);
+      Print("Update Results dayCurrentTime <= startTime");
+      UpdateResults(dayCurrentTime);
       return;
    }
+
+   MidMinMaxVariation();
    
    int positions = GetNumberOfOpenOrders(expertAdvisorID, Symbol());
-
+   if (!asdf){
+      Print(positions + " posição aberta");
+      asdf = true;
+   }
+   
    // current time is greater than or equal to the closing time or the gain is greater than or equal to the daily target 
-   if(currentTime >= endTime || pointsDailyResult >= inpPointsDailyTarget || pointsDailyResult <= (inpPointsDailyLoss) * -1)
+   if(dayCurrentTime >= endTime || pointsDailyResult >= inpPointsDailyTarget || pointsDailyResult <= (inpPointsDailyLoss) * -1)
    {
         if(positions > 0)
             trade.PositionClose(_Symbol);
@@ -202,7 +210,8 @@ void OnTick()
             sell = false;
          }
          IsNewCandle();
-         UpdateResults(currentTime);
+         Print("Update Results Manually Closed");
+         UpdateResults(dayCurrentTime);
       }
       
       else
@@ -215,7 +224,7 @@ void OnTick()
                if(IsToOperate())
                {
                   trade.SetExpertMagicNumber(expertAdvisorID);
-                  trade.Buy(inpVolume,_Symbol,lastTick.ask, lastTick.ask - pointsSL, lastTick.ask + pointsTP);
+                  trade.Buy(inpVolume,_Symbol,lastTick.ask, lastTick.ask - pointsSL, lastTick.ask + pointsTP, expertAdvisorID);
                   lastTradeTime  = TimeCurrent();
                   closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
                   buy = true;
@@ -231,7 +240,7 @@ void OnTick()
                if(IsToOperate())
                {
                   trade.SetExpertMagicNumber(expertAdvisorID);
-                  trade.Sell(inpVolume,_Symbol,lastTick.bid, lastTick.bid + pointsSL, lastTick.bid - pointsTP);
+                  trade.Sell(inpVolume,_Symbol,lastTick.bid, lastTick.bid + pointsSL, lastTick.bid - pointsTP, expertAdvisorID);
                   lastTradeTime  = TimeCurrent();
                   closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
                   sell = true;
@@ -250,14 +259,16 @@ void OnTick()
          {
             trade.PositionClose(_Symbol);
             buy = false;   
-            UpdateResults(currentTime);
+            Print("Update Results Close Buy");
+            UpdateResults(dayCurrentTime);
          } 
          // when the candle closes below the average
          if(sell && closePrice <= ma[1])
          {
             trade.PositionClose(_Symbol);
             sell = false;   
-            UpdateResults(currentTime);
+            Print("Update Results Close Sell");
+            UpdateResults(dayCurrentTime);
          }
       }
    }
@@ -265,9 +276,12 @@ void OnTick()
 
 void UpdateResults (datetime current)
 {
+   Print("************************************************************");
+   Print("Resultado antes: "+pointsDailyResult+" pontos -> R$ "+DoubleToString(cashDailyResult,2));
    pointsDailyResult = result(expertAdvisorID, current);
    cashDailyResult   = (pointsDailyResult/5) * inpVolume;
-
+   Print("Resultado depois: "+pointsDailyResult+" pontos -> R$ "+DoubleToString(cashDailyResult,2));
+   Print("************************************************************");
    if(pointsDailyResult == 0)
    {
       ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrBlack);
@@ -308,18 +322,13 @@ double result(ulong xpAdvID, datetime current)
 
       if(HistoryDealGetInteger(ticket, DEAL_REASON) == DEAL_REASON_CLIENT)      
       {
-         for(int x = 1; x <= totalDeals - 1; x++)
+         
+         for(int x = totalDeals - 1; x >= 1 ; x--)
          {
             ulong previousTicket  = HistoryDealGetTicket(x);
             
             if (HistoryDealGetInteger(previousTicket, DEAL_MAGIC) == magicNumber)
-            {
-               ulong previousTP      = HistoryDealGetDouble(previousTicket, DEAL_TP);
-               ulong previousSL      = HistoryDealGetDouble(previousTicket, DEAL_SL);
-               manuallyClosed        = HistoryDealGetDouble(ticket, DEAL_TP) == previousTP && 
-                                       HistoryDealGetDouble(ticket, DEAL_SL) == previousSL;
-            }
-
+               manuallyClosed = true;
          }
       }
 
@@ -331,8 +340,61 @@ double result(ulong xpAdvID, datetime current)
   return res;
 }
 
+
+int GetNumberOfOpenOrders(ulong magicNumber, string symbol)
+{
+   int openTrades = 0;
+   bool manuallyClosed = false;
+
+   for (int i = 0; i <  PositionsTotal(); i++)
+   {
+      ulong ticket = PositionGetTicket(i);
+
+      if(PositionSelectByTicket(ticket))
+      {
+      if(HistoryDealGetInteger(ticket, DEAL_REASON) == DEAL_REASON_CLIENT)      
+      {
+         for(int x = HistoryDealsTotal() - 2; x >= 1 ; x--)
+         {
+            ulong previousTicket  = HistoryDealGetTicket(x-2);
+         
+            if (HistoryDealGetInteger(previousTicket, DEAL_MAGIC) == magicNumber)
+            {
+               manuallyClosed = true;
+            }
+         }
+      }
+
+      // Successfully select the position
+      if(PositionGetInteger(POSITION_MAGIC) == magicNumber || manuallyClosed) 
+      {
+         // Open trade is from the Expert with our magicNumber
+         if(PositionGetString(POSITION_SYMBOL) == symbol)
+            openTrades++;
+      }
+      }
+   }
+   return openTrades;
+}
+
+bool IsNewCandle()
+{
+   datetime time[];
+   
+   if(CopyTime(Symbol(), Period(), 0, 1, time) < 1)
+      return false;
+   
+   if(time[0] == lastCandleTime)
+      return false;
+   
+   lastCandleTime = time[0];
+
+   return true;
+}
+
 bool IsToOperate()
 {
+
    if(CopyRates(_Symbol, _Period, 0, nCandlesToSocket, rates) < nCandlesToSocket)
       return(false);
    
@@ -465,39 +527,22 @@ void AssignLabels()
 
 }
 
-int GetNumberOfOpenOrders(ulong magicNumber, string symbol)
+double MidMinMaxVariation()
 {
-   int openTrades = 0;
+   double mid = 0;
+   
+   datetime today = TimeCurrent() % 86400;
+   datetime dayCurrentTime = TimeCurrent() - today;
+   int numberOfCandles = Bars (_Symbol, _Period,dayCurrentTime,TimeCurrent());
 
-   for (int i = 0; i <  PositionsTotal(); i++)
+   double variation = 0;
+   double x = 0;
+   for(x; x <= numberOfCandles; x++)
    {
-      ulong ticket = PositionGetTicket(i);
-
-      if(PositionSelectByTicket(ticket))
-      {
-         // Successfully select the position
-         if(PositionGetInteger(POSITION_MAGIC) == magicNumber) 
-         {
-            // Open trade is from the Expert with our magicNumber
-            if(PositionGetString(POSITION_SYMBOL) == symbol)
-               openTrades++;
-         }
-      }
+      variation += iHigh(_Symbol,_Period,x) - iLow(_Symbol,_Period,x);
    }
-   return openTrades;
-}
+   mid = variation/x;
+   Comment("Nº de candles do dia: " + numberOfCandles + "\nMédia de pontos/candle: " + DoubleToString(mid,2));
 
-bool IsNewCandle()
-{
-   datetime time[];
-   
-   if(CopyTime(Symbol(), Period(), 0, 1, time) < 1)
-      return false;
-   
-   if(time[0] == lastCandleTime)
-      return false;
-   
-   lastCandleTime = time[0];
-
-   return true;
+   return mid;
 }
