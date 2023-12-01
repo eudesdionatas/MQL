@@ -56,7 +56,6 @@ double         pointsTP;
 double         pointsTarget;
 datetime       lastCandleTime;
 ulong          expertAdvisorID;
-bool asdf = false;
 
 CClientSocket* Socket;
 int nCandlesToSocket;
@@ -156,10 +155,6 @@ void OnTick()
    MidMinMaxVariation();
    
    int positions = GetNumberOfOpenOrders(expertAdvisorID, Symbol());
-   if (!asdf){
-      Print(positions + " posição aberta");
-      asdf = true;
-   }
    
    // current time is greater than or equal to the closing time or the gain is greater than or equal to the daily target 
    if(dayCurrentTime >= endTime || pointsDailyResult >= inpPointsDailyTarget || pointsDailyResult <= (inpPointsDailyLoss) * -1)
