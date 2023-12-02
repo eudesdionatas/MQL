@@ -369,6 +369,7 @@ int GetNumberOfOpenOrders(ulong xpAdvID, string symbol)
             if (HistoryDealGetInteger(previousTicket, DEAL_MAGIC) == xpAdvID)
             {
                manuallyClosed = true;
+               break;
             }
          }
       }
