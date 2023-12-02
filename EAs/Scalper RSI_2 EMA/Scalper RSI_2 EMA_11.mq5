@@ -336,7 +336,10 @@ double result(ulong xpAdvID, datetime timeCurrent, datetime dayTimeCurrent)
             ulong previousTicket  = HistoryDealGetTicket(x);
             
             if (HistoryDealGetInteger(previousTicket, DEAL_MAGIC) == xpAdvID)
-               manuallyClosed = true;
+               {
+                  manuallyClosed = true;
+                  break;
+               }
          }
       }
 
