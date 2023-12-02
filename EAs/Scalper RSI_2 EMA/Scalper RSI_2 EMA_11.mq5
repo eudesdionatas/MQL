@@ -505,7 +505,7 @@ void AssignLabels()
    if (inpWithSL)
       ObjectSetString   (0,"lossPoints",OBJPROP_TEXT, IntegerToString(inpPointsDailyLoss) + " pontos");
    else 
-      ObjectSetString   (0,"lossPoints",OBJPROP_TEXT, "Ilimitado");
+      ObjectSetString   (0,"lossPoints",OBJPROP_TEXT, "-");
    ObjectSetInteger  (0,"lossPoints",OBJPROP_COLOR, clrBlack);
    ObjectSetInteger  (0,"lossPoints",OBJPROP_XDISTANCE, 5);
    ObjectSetInteger  (0,"lossPoints",OBJPROP_YDISTANCE, 140);
@@ -516,7 +516,7 @@ void AssignLabels()
    if (inpWithSL)
       ObjectSetString   (0,"lossCash",OBJPROP_TEXT, IntegerToString(inpVolume) + " x R$ " + IntegerToString(inpPointsDailyLoss/5));
    else
-      ObjectSetString   (0,"lossCash",OBJPROP_TEXT, "Ilimitado");
+      ObjectSetString   (0,"lossCash",OBJPROP_TEXT, "-");
    ObjectSetInteger  (0,"lossCash",OBJPROP_COLOR, clrBlack);
    ObjectSetInteger  (0,"lossCash",OBJPROP_XDISTANCE, 5);
    ObjectSetInteger  (0,"lossCash",OBJPROP_YDISTANCE, 165);
@@ -537,7 +537,7 @@ void AssignLabels()
    if(inpWithSL)
       ObjectSetString   (0,"stopLossPoints",OBJPROP_TEXT, DoubleToString(inpSL,0) + " pontos");
    else
-      ObjectSetString   (0,"stopLossPoints",OBJPROP_TEXT, "Sem stop");  
+      ObjectSetString   (0,"stopLossPoints",OBJPROP_TEXT, "-");  
    ObjectSetInteger  (0,"stopLossPoints",OBJPROP_COLOR, clrBlack);
    ObjectSetInteger  (0,"stopLossPoints",OBJPROP_XDISTANCE, 5);
    ObjectSetInteger  (0,"stopLossPoints",OBJPROP_YDISTANCE, 205);
@@ -548,7 +548,7 @@ void AssignLabels()
    if(inpWithSL)
       ObjectSetString   (0,"stopLossCash",OBJPROP_TEXT, "R$ " + DoubleToString(inpSL/5,2));
    else
-      ObjectSetString   (0,"stopLossCash",OBJPROP_TEXT, "Sem stop");  
+      ObjectSetString   (0,"stopLossCash",OBJPROP_TEXT, "-");  
    ObjectSetInteger  (0,"stopLossCash",OBJPROP_COLOR, clrBlack);
    ObjectSetInteger  (0,"stopLossCash",OBJPROP_XDISTANCE, 5);
    ObjectSetInteger  (0,"stopLossCash",OBJPROP_YDISTANCE, 180);
