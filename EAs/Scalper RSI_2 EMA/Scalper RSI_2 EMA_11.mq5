@@ -336,10 +336,10 @@ double result(ulong xpAdvID, datetime timeCurrent, datetime dayTimeCurrent)
             ulong previousTicket  = HistoryDealGetTicket(x);
             
             if (HistoryDealGetInteger(previousTicket, DEAL_MAGIC) == xpAdvID)
-               {
-                  manuallyClosed = true;
-                  break;
-               }
+            {
+               manuallyClosed = true;
+               break;
+            }
          }
       }
 
@@ -491,7 +491,7 @@ void AssignLabels()
    ObjectSetString   (0,"loss",OBJPROP_TEXT, "Loss diário");
    ObjectSetInteger  (0,"loss",OBJPROP_COLOR, clrBlack);
    ObjectSetInteger  (0,"loss",OBJPROP_XDISTANCE, 5);
-   ObjectSetInteger  (0,"loss",OBJPROP_YDISTANCE, 100);
+   ObjectSetInteger  (0,"loss",OBJPROP_YDISTANCE, 90);
    ObjectSetInteger  (0,"loss",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
    ObjectSetInteger  (0,"loss",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);   
    
@@ -502,7 +502,7 @@ void AssignLabels()
       ObjectSetString   (0,"lossPoints",OBJPROP_TEXT, "Ilimitado");
    ObjectSetInteger  (0,"lossPoints",OBJPROP_COLOR, clrBlack);
    ObjectSetInteger  (0,"lossPoints",OBJPROP_XDISTANCE, 5);
-   ObjectSetInteger  (0,"lossPoints",OBJPROP_YDISTANCE, 120);
+   ObjectSetInteger  (0,"lossPoints",OBJPROP_YDISTANCE, 110);
    ObjectSetInteger  (0,"lossPoints",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
    ObjectSetInteger  (0,"lossPoints",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);
 
@@ -513,9 +513,68 @@ void AssignLabels()
       ObjectSetString   (0,"lossCash",OBJPROP_TEXT, "Ilimitado");
    ObjectSetInteger  (0,"lossCash",OBJPROP_COLOR, clrBlack);
    ObjectSetInteger  (0,"lossCash",OBJPROP_XDISTANCE, 5);
-   ObjectSetInteger  (0,"lossCash",OBJPROP_YDISTANCE, 140);
+   ObjectSetInteger  (0,"lossCash",OBJPROP_YDISTANCE, 130);
    ObjectSetInteger  (0,"lossCash",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
    ObjectSetInteger  (0,"lossCash",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);
+
+   /************************************************************************************/
+
+   ObjectCreate      (0,"stopLoss",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"stopLoss",OBJPROP_TEXT, "Stop Loss");
+   ObjectSetInteger  (0,"stopLoss",OBJPROP_COLOR, clrRed);
+   ObjectSetInteger  (0,"stopLoss",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"stopLoss",OBJPROP_YDISTANCE, 185);
+   ObjectSetInteger  (0,"stopLoss",OBJPROP_CORNER,CORNER_RIGHT_LOWER);
+   ObjectSetInteger  (0,"stopLoss",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER);    
+
+   ObjectCreate      (0,"stopLossPoints",OBJ_LABEL,  0, 0, 0);
+   if(inpWithSL)
+      ObjectSetString   (0,"stopLossPoints",OBJPROP_TEXT, DoubleToString(inpSL,0) + " pontos");
+   else
+      ObjectSetString   (0,"stopLossPoints",OBJPROP_TEXT, "Sem stop");  
+   ObjectSetInteger  (0,"stopLossPoints",OBJPROP_COLOR, clrBlack);
+   ObjectSetInteger  (0,"stopLossPoints",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"stopLossPoints",OBJPROP_YDISTANCE, 165);
+   ObjectSetInteger  (0,"stopLossPoints",OBJPROP_CORNER,CORNER_RIGHT_LOWER);
+   ObjectSetInteger  (0,"stopLossPoints",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER);    
+
+   ObjectCreate      (0,"stopLossCash",OBJ_LABEL,  0, 0, 0);
+   if(inpWithSL)
+      ObjectSetString   (0,"stopLossCash",OBJPROP_TEXT, "R$ " + DoubleToString(inpSL/5,2));
+   else
+      ObjectSetString   (0,"stopLossCash",OBJPROP_TEXT, "Sem stop");  
+   ObjectSetInteger  (0,"stopLossCash",OBJPROP_COLOR, clrBlack);
+   ObjectSetInteger  (0,"stopLossCash",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"stopLossCash",OBJPROP_YDISTANCE, 145);
+   ObjectSetInteger  (0,"stopLossCash",OBJPROP_CORNER,CORNER_RIGHT_LOWER);
+   ObjectSetInteger  (0,"stopLossCash",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER); 
+
+
+   /************************************************************************************/
+
+   ObjectCreate      (0,"takeProfit",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"takeProfit",OBJPROP_TEXT, "Take Profit");
+   ObjectSetInteger  (0,"takeProfit",OBJPROP_COLOR, clrGreen);
+   ObjectSetInteger  (0,"takeProfit",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"takeProfit",OBJPROP_YDISTANCE, 115);
+   ObjectSetInteger  (0,"takeProfit",OBJPROP_CORNER,CORNER_RIGHT_LOWER);
+   ObjectSetInteger  (0,"takeProfit",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER);    
+
+   ObjectCreate      (0,"takeProfitPoints",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"takeProfitPoints",OBJPROP_TEXT, DoubleToString(inpTP,0) + " pontos");
+   ObjectSetInteger  (0,"takeProfitPoints",OBJPROP_COLOR, clrBlack);
+   ObjectSetInteger  (0,"takeProfitPoints",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"takeProfitPoints",OBJPROP_YDISTANCE, 95);
+   ObjectSetInteger  (0,"takeProfitPoints",OBJPROP_CORNER,CORNER_RIGHT_LOWER);
+   ObjectSetInteger  (0,"takeProfitPoints",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER);    
+
+   ObjectCreate      (0,"takeProfitCash",OBJ_LABEL,  0, 0, 0);
+   ObjectSetString   (0,"takeProfitCash",OBJPROP_TEXT, "R$ " + DoubleToString(inpTP/5,2));
+   ObjectSetInteger  (0,"takeProfitCash",OBJPROP_COLOR, clrBlack);
+   ObjectSetInteger  (0,"takeProfitCash",OBJPROP_XDISTANCE, 5);
+   ObjectSetInteger  (0,"takeProfitCash",OBJPROP_YDISTANCE, 75);
+   ObjectSetInteger  (0,"takeProfitCash",OBJPROP_CORNER,CORNER_RIGHT_LOWER);
+   ObjectSetInteger  (0,"takeProfitCash",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER); 
 
    /************************************************************************************/
 
