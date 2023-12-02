@@ -508,10 +508,9 @@ void AssignLabels()
 
    ObjectCreate      (0,"lossCash",OBJ_LABEL,  0, 0, 0);
    if (inpWithSL)
-      ObjectSetString   (0,"lossCash",OBJPROP_TEXT, IntegerToString(inpPointsDailyLoss) + " pontos");
+      ObjectSetString   (0,"lossCash",OBJPROP_TEXT, IntegerToString(inpVolume) + " x R$ " + IntegerToString(inpPointsDailyLoss/5));
    else
       ObjectSetString   (0,"lossCash",OBJPROP_TEXT, "Ilimitado");
-   ObjectSetString   (0,"lossCash",OBJPROP_TEXT, IntegerToString(inpVolume) + " x R$ " + IntegerToString(inpPointsDailyLoss/5));
    ObjectSetInteger  (0,"lossCash",OBJPROP_COLOR, clrBlack);
    ObjectSetInteger  (0,"lossCash",OBJPROP_XDISTANCE, 5);
    ObjectSetInteger  (0,"lossCash",OBJPROP_YDISTANCE, 140);
