@@ -27,6 +27,7 @@ input int      inpVolume             = 1;          // Número de papéis
 input int      inpPointsDailyTarget  = 400;        // Alvo diário em pontos
 input int      inpPointsDailyLoss    = 200;        // Loss diário em pontos            
 input double   inpTP                 = 700;        // Take Profit
+input bool     inpWithSL             = false;      // Lançar ordem com Stop Loss
 input double   inpSL                 = 500;        // Stop Loss
 input bool     monday                = true;       // Operar segunda-feira
 input bool     tuesday               = true;       // Operar terça-feira
@@ -67,10 +68,13 @@ MqlRates rates[];
 int OnInit()
 {
   
-   pointsSL          = inpSL * Point();
-   pointsTP          = inpTP * Point();
-   pointsTarget      = inpPointsDailyTarget * Point();
-   expertAdvisorID   = 1546;
+   pointsSL                = inpSL * Point();
+   pointsTP                = inpTP * Point();
+   pointsTarget            = inpPointsDailyTarget * Point();
+   expertAdvisorID         = 1546;
+   datetime timeCurrent    = TimeCurrent();
+   datetime dayTimeCurrent = timeCurrent % 86400;
+
    
    ArraySetAsSeries(rsi,true);
    ArraySetAsSeries(ma, true);
@@ -95,7 +99,8 @@ int OnInit()
    lastCandleTime = 0;
 
    Print("Update Results OnInit");
-   UpdateResults(TimeCurrent() % 86400);
+   UpdateResults(timeCurrent,dayTimeCurrent);
+   MidMinMaxVariation(timeCurrent,dayTimeCurrent);
 
   //---
    return(INIT_SUCCEEDED);
@@ -129,8 +134,8 @@ void OnDeinit(const int reason)
 void OnTick()
 {
 //---
-   bool     inOperation = false;
-   datetime dayCurrentTime = TimeCurrent() % 86400;
+   datetime timeCurrent    = TimeCurrent();
+   datetime dayTimeCurrent = timeCurrent % 86400;
 
    TimeCurrent(dateTimeStructure);
    if((dateTimeStructure.day_of_week == MONDAY     && !monday)    || 
@@ -142,26 +147,26 @@ void OnTick()
       return;
    }
    
+   MidMinMaxVariation(timeCurrent,dayTimeCurrent);
+
    // current time is less than or equal to the start time
-   if( dayCurrentTime <= startTime )
+   if( dayTimeCurrent <= startTime )
    {
       pointsDailyResult = 0;
       cashDailyResult = 0;
-      Print("Update Results dayCurrentTime <= startTime");
-      UpdateResults(dayCurrentTime);
+      Print("Update Results dayTimeCurrent <= startTime");
+      UpdateResults(timeCurrent,dayTimeCurrent);
       return;
    }
-
-   MidMinMaxVariation();
    
    int positions = GetNumberOfOpenOrders(expertAdvisorID, Symbol());
    
    // current time is greater than or equal to the closing time or the gain is greater than or equal to the daily target 
-   if(dayCurrentTime >= endTime || pointsDailyResult >= inpPointsDailyTarget || pointsDailyResult <= (inpPointsDailyLoss) * -1)
+   if(dayTimeCurrent >= endTime || pointsDailyResult >= inpPointsDailyTarget || pointsDailyResult <= (inpPointsDailyLoss) * -1)
    {
         if(positions > 0)
             trade.PositionClose(_Symbol);
-            UpdateResults(dayCurrentTime);
+            UpdateResults(timeCurrent,dayTimeCurrent);
             Print("ayCurrentTime >= endTime || pointsDailyResult >= inpPointsDailyTarget || pointsDailyResult <= (inpPointsDailyLoss) * -1");
         if (!mailSent)
         {
@@ -208,7 +213,7 @@ void OnTick()
          }
          IsNewCandle();
          Print("Update Results Manually Closed");
-         UpdateResults(dayCurrentTime);
+         UpdateResults(timeCurrent,dayTimeCurrent);
       }
       
       else
@@ -221,8 +226,11 @@ void OnTick()
                if(IsToOperate())
                {
                   trade.SetExpertMagicNumber(expertAdvisorID);
-                  trade.Buy(inpVolume,_Symbol,lastTick.ask, lastTick.ask - pointsSL, lastTick.ask + pointsTP, expertAdvisorID);
-                  lastTradeTime  = TimeCurrent();
+                  if(inpWithSL)
+                     trade.Buy(inpVolume,_Symbol,lastTick.ask, lastTick.ask - pointsSL, lastTick.ask + pointsTP, expertAdvisorID);
+                  else
+                     trade.Buy(inpVolume,_Symbol,lastTick.ask, 0, lastTick.ask + pointsTP, expertAdvisorID);
+                  lastTradeTime  = timeCurrent;
                   closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
                   buy = true;
                }
@@ -237,8 +245,11 @@ void OnTick()
                if(IsToOperate())
                {
                   trade.SetExpertMagicNumber(expertAdvisorID);
-                  trade.Sell(inpVolume,_Symbol,lastTick.bid, lastTick.bid + pointsSL, lastTick.bid - pointsTP, expertAdvisorID);
-                  lastTradeTime  = TimeCurrent();
+                  if(inpWithSL)
+                     trade.Sell(inpVolume,_Symbol,lastTick.bid, lastTick.bid + pointsSL, lastTick.bid - pointsTP, expertAdvisorID);
+                  else
+                     trade.Sell(inpVolume,_Symbol,lastTick.bid, 0, lastTick.bid - pointsTP, expertAdvisorID);
+                  lastTradeTime  = timeCurrent;
                   closeTradeTime = lastTradeTime + lDelta + PeriodSeconds(_Period); 
                   sell = true;
                }
@@ -250,14 +261,14 @@ void OnTick()
    else
    {
    // when the candle closes above the average
-      if(TimeCurrent() > closeTradeTime)
+      if(timeCurrent > closeTradeTime)
       {
          if(buy && closePrice >= ma[1])
          {
             trade.PositionClose(_Symbol);
             buy = false;   
             Print("Update Results Close Buy");
-            UpdateResults(dayCurrentTime);
+            UpdateResults(timeCurrent,dayTimeCurrent);
          } 
          // when the candle closes below the average
          if(sell && closePrice <= ma[1])
@@ -265,17 +276,17 @@ void OnTick()
             trade.PositionClose(_Symbol);
             sell = false;   
             Print("Update Results Close Sell");
-            UpdateResults(dayCurrentTime);
+            UpdateResults(timeCurrent,dayTimeCurrent);
          }
       }
    }
 }
 
-void UpdateResults (datetime current)
+void UpdateResults (datetime timeCurrent, datetime dayTimeCurrent)
 {
    Print("************************************************************");
    Print("Resultado antes: "+pointsDailyResult+" pontos -> R$ "+DoubleToString(cashDailyResult,2));
-   pointsDailyResult = result(expertAdvisorID, current);
+   pointsDailyResult = result(expertAdvisorID, timeCurrent, dayTimeCurrent);
    cashDailyResult   = (pointsDailyResult/5) * inpVolume;
    Print("Resultado depois: "+pointsDailyResult+" pontos -> R$ "+DoubleToString(cashDailyResult,2));
    Print("************************************************************");
@@ -304,13 +315,13 @@ void UpdateResults (datetime current)
 }
  
 // Return the result at the day at points
-double result(ulong xpAdvID, datetime current)
+double result(ulong xpAdvID, datetime timeCurrent, datetime dayTimeCurrent)
 {
    double res           = 0;
-   datetime today       = TimeCurrent() - current;
+   datetime today       = timeCurrent - dayTimeCurrent;
    bool manuallyClosed  = false;
 
- if (HistorySelect(today, TimeCurrent())){
+ if (HistorySelect(today, timeCurrent)){
    int totalDeals = HistoryDealsTotal()-1;
    for (int i = 1; i <= totalDeals; i++)
    {
@@ -324,7 +335,7 @@ double result(ulong xpAdvID, datetime current)
          {
             ulong previousTicket  = HistoryDealGetTicket(x);
             
-            if (HistoryDealGetInteger(previousTicket, DEAL_MAGIC) == magicNumber)
+            if (HistoryDealGetInteger(previousTicket, DEAL_MAGIC) == xpAdvID)
                manuallyClosed = true;
          }
       }
@@ -338,7 +349,7 @@ double result(ulong xpAdvID, datetime current)
 }
 
 
-int GetNumberOfOpenOrders(ulong magicNumber, string symbol)
+int GetNumberOfOpenOrders(ulong xpAdvID, string symbol)
 {
    int openTrades = 0;
    bool manuallyClosed = false;
@@ -355,7 +366,7 @@ int GetNumberOfOpenOrders(ulong magicNumber, string symbol)
          {
             ulong previousTicket  = HistoryDealGetTicket(x-2);
          
-            if (HistoryDealGetInteger(previousTicket, DEAL_MAGIC) == magicNumber)
+            if (HistoryDealGetInteger(previousTicket, DEAL_MAGIC) == xpAdvID)
             {
                manuallyClosed = true;
             }
@@ -363,7 +374,7 @@ int GetNumberOfOpenOrders(ulong magicNumber, string symbol)
       }
 
       // Successfully select the position
-      if(PositionGetInteger(POSITION_MAGIC) == magicNumber || manuallyClosed) 
+      if(PositionGetInteger(POSITION_MAGIC) == xpAdvID || manuallyClosed) 
       {
          // Open trade is from the Expert with our magicNumber
          if(PositionGetString(POSITION_SYMBOL) == symbol)
@@ -481,7 +492,10 @@ void AssignLabels()
    ObjectSetInteger  (0,"loss",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);   
    
    ObjectCreate      (0,"lossPoints",OBJ_LABEL,  0, 0, 0);
-   ObjectSetString   (0,"lossPoints",OBJPROP_TEXT, IntegerToString(inpPointsDailyLoss) + " pontos");
+   if (inpWithSL)
+      ObjectSetString   (0,"lossPoints",OBJPROP_TEXT, IntegerToString(inpPointsDailyLoss) + " pontos");
+   else 
+      ObjectSetString   (0,"lossPoints",OBJPROP_TEXT, "Ilimitado");
    ObjectSetInteger  (0,"lossPoints",OBJPROP_COLOR, clrBlack);
    ObjectSetInteger  (0,"lossPoints",OBJPROP_XDISTANCE, 5);
    ObjectSetInteger  (0,"lossPoints",OBJPROP_YDISTANCE, 120);
@@ -489,6 +503,10 @@ void AssignLabels()
    ObjectSetInteger  (0,"lossPoints",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);
 
    ObjectCreate      (0,"lossCash",OBJ_LABEL,  0, 0, 0);
+   if (inpWithSL)
+      ObjectSetString   (0,"lossCash",OBJPROP_TEXT, IntegerToString(inpPointsDailyLoss) + " pontos");
+   else
+      ObjectSetString   (0,"lossCash",OBJPROP_TEXT, "Ilimitado");
    ObjectSetString   (0,"lossCash",OBJPROP_TEXT, IntegerToString(inpVolume) + " x R$ " + IntegerToString(inpPointsDailyLoss/5));
    ObjectSetInteger  (0,"lossCash",OBJPROP_COLOR, clrBlack);
    ObjectSetInteger  (0,"lossCash",OBJPROP_XDISTANCE, 5);
@@ -524,13 +542,12 @@ void AssignLabels()
 
 }
 
-double MidMinMaxVariation()
+double MidMinMaxVariation(datetime timeCurrent, datetime dayTimeCurrent)
 {
    double mid = 0;
    
-   datetime today = TimeCurrent() % 86400;
-   datetime dayCurrentTime = TimeCurrent() - today;
-   int numberOfCandles = Bars (_Symbol, _Period,dayCurrentTime,TimeCurrent());
+   datetime today = timeCurrent - dayTimeCurrent;
+   int numberOfCandles     = Bars(_Symbol, _Period,today,timeCurrent);
 
    double variation = 0;
    double x = 0;
@@ -539,7 +556,7 @@ double MidMinMaxVariation()
       variation += iHigh(_Symbol,_Period,x) - iLow(_Symbol,_Period,x);
    }
    mid = variation/x;
-   Comment("Nº de candles do dia: " + numberOfCandles + "\nMédia de pontos/candle: " + DoubleToString(mid,2));
+   Comment("    Nº de candles do dia: " + numberOfCandles + "\nMédia de pontos/candle: " + DoubleToString(mid,2));
 
    return mid;
 }
