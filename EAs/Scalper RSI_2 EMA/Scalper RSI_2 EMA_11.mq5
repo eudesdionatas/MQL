@@ -627,4 +627,6 @@ double MidMinMaxVariation(datetime timeCurrent, datetime dayTimeCurrent)
    Comment("    Nº de candles do dia: " + numberOfCandles + "\nMédia de pontos/candle: " + DoubleToString(mid,2));
 
    return mid;
+
+   // teste
 }
