@@ -523,7 +523,7 @@ void AssignLabels()
    ObjectSetInteger  (0,"lossCash",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
    ObjectSetInteger  (0,"lossCash",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);
 
-   /************************************************************************************/
+   /***********************************************************************************/
 
    ObjectCreate      (0,"stopLoss",OBJ_LABEL,  0, 0, 0);
    ObjectSetString   (0,"stopLoss",OBJPROP_TEXT, "Stop Loss");
