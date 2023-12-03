@@ -499,7 +499,7 @@ void AssignLabels()
    ObjectSetInteger  (0,"loss",OBJPROP_XDISTANCE, 5);
    ObjectSetInteger  (0,"loss",OBJPROP_YDISTANCE, 115);
    ObjectSetInteger  (0,"loss",OBJPROP_CORNER,CORNER_RIGHT_UPPER);
-   ObjectSetInteger  (0,"loss",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);   
+   ObjectSetInteger  (0,"loss",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER); 
    
    ObjectCreate      (0,"lossPoints",OBJ_LABEL,  0, 0, 0);
    if (inpWithSL)
