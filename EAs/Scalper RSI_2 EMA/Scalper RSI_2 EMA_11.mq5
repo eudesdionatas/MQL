@@ -620,8 +620,8 @@ double MidMinMaxVariation(datetime timeCurrent, datetime dayTimeCurrent)
       variation += iHigh(_Symbol,_Period,x) - iLow(_Symbol,_Period,x);
    }
    mid = variation/x;
-      Comment( "Número de candles do dia: " + numberOfCandles + "           RSI (Compra/Venda): " + inpRSI_BuyLevel + "/" + inpRSI_SellLevel +
-               "\nMédia de pontos/candle: " + DoubleToString(mid,2) + "        Número de operações: " + contOperations);
+      Comment( "Número de candles do dia: " + numberOfCandles + "              RSI ( Mínima/Máxima ): " + inpRSI_BuyLevel + "/" + inpRSI_SellLevel +
+               "\nAVG ( pontos por candle ): " + DoubleToString(mid,2) + "        Número de operações: " + contOperations);
 
    return mid;
 }
