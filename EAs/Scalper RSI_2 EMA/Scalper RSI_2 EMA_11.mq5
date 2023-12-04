@@ -46,6 +46,7 @@ datetime       endTime           = StringToTime(inpEndHour)    %  86400;
 int            hndRSI            = 0;
 int            hndMA             = 0;
 int            customMA          = 0;
+int            contOperations    = 0;
 double         cashDailyResult   = 0;
 double         pointsDailyResult = 0;
 double         rsi[];
@@ -147,7 +148,6 @@ void OnTick()
       return;
    }
    
-   MidMinMaxVariation(timeCurrent,dayTimeCurrent);
 
    // current time is less than or equal to the start time
    if( dayTimeCurrent <= startTime )
@@ -280,6 +280,7 @@ void OnTick()
          }
       }
    }
+   MidMinMaxVariation(timeCurrent,dayTimeCurrent);
 }
 
 void UpdateResults (datetime timeCurrent, datetime dayTimeCurrent)
@@ -308,7 +309,7 @@ void UpdateResults (datetime timeCurrent, datetime dayTimeCurrent)
       ObjectSetInteger  (0,"resultPoints",OBJPROP_COLOR, clrGreen);
       ObjectSetInteger  (0,"resultCash",OBJPROP_COLOR, clrGreen);
    }
-      
+
    ObjectSetString(0, "resultPoints",  OBJPROP_TEXT, DoubleToString(pointsDailyResult, 0) + " pontos");
    ObjectSetString(0, "resultCash",  OBJPROP_TEXT, "R$ " + DoubleToString(cashDailyResult, 2));
 
@@ -346,6 +347,7 @@ double result(ulong xpAdvID, datetime timeCurrent, datetime dayTimeCurrent)
      if(((magicNumber == xpAdvID) && (HistoryDealGetString(ticket, DEAL_SYMBOL) == Symbol())) || manuallyClosed)
        res += HistoryDealGetDouble(ticket, DEAL_PROFIT);
    }
+   contOperations = (totalDeals+1)/2;
  }
   res = (res/inpVolume) * 5;
   return res;
@@ -618,7 +620,8 @@ double MidMinMaxVariation(datetime timeCurrent, datetime dayTimeCurrent)
       variation += iHigh(_Symbol,_Period,x) - iLow(_Symbol,_Period,x);
    }
    mid = variation/x;
-   Comment("    Nº de candles do dia: " + numberOfCandles + "\nMédia de pontos/candle: " + DoubleToString(mid,2));
+      Comment( "Número de candles do dia: " + numberOfCandles + "           RSI (Compra/Venda): " + inpRSI_BuyLevel + "/" + inpRSI_SellLevel +
+               "\nMédia de pontos/candle: " + DoubleToString(mid,2) + "        Número de operações: " + contOperations);
 
    return mid;
 }

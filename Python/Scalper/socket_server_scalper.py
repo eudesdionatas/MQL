@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import socket, numpy as np
-import pickle
 import xgboost as xgb
 import pandas as pd
 import pandas_ta as ta
