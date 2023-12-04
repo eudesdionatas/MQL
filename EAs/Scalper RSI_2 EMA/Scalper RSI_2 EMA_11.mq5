@@ -309,7 +309,7 @@ void UpdateResults (datetime timeCurrent, datetime dayTimeCurrent)
       ObjectSetInteger  (0,"resultPoints",OBJPROP_COLOR, clrGreen);
       ObjectSetInteger  (0,"resultCash",OBJPROP_COLOR, clrGreen);
    }
-
+      
    ObjectSetString(0, "resultPoints",  OBJPROP_TEXT, DoubleToString(pointsDailyResult, 0) + " pontos");
    ObjectSetString(0, "resultCash",  OBJPROP_TEXT, "R$ " + DoubleToString(cashDailyResult, 2));
 
@@ -620,8 +620,7 @@ double MidMinMaxVariation(datetime timeCurrent, datetime dayTimeCurrent)
       variation += iHigh(_Symbol,_Period,x) - iLow(_Symbol,_Period,x);
    }
    mid = variation/x;
-      Comment( "Número de candles do dia: " + numberOfCandles + "           RSI (Compra/Venda): " + inpRSI_BuyLevel + "/" + inpRSI_SellLevel +
-               "\nMédia de pontos/candle: " + DoubleToString(mid,2) + "        Número de operações: " + contOperations);
+   Comment("    Nº de candles do dia: " + numberOfCandles + "\nMédia de pontos/candle: " + DoubleToString(mid,2));
 
    return mid;
 }
