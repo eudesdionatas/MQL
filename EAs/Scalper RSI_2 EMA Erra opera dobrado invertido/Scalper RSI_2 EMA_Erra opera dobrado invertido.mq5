@@ -20,7 +20,7 @@ MqlDateTime dateTimeStructure;
 input string   inpStartHour          = "9:15";     // Horário de Início
 input string   inpEndHour            = "17:45";    // Horário de encerramento
 input int      inpRSI_Period         = 2;          // Período do RSI
-input int      inpEMA                = 8;          // Período da média
+input int      inpEMA                = 11;         // Período da média
 input int      inpRSI_BuyLevel       = 10;         // Mínima do RSI
 input int      inpRSI_SellLevel      = 90;         // Máxima do RSI
 input int      inpVolume             = 1;          // Número de papéis

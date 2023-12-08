@@ -625,3 +625,4 @@ double MidMinMaxVariation(datetime timeCurrent, datetime dayTimeCurrent)
 
    return mid;
 }
+
