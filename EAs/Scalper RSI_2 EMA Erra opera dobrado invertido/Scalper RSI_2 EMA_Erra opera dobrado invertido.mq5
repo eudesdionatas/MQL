@@ -303,7 +303,7 @@ void OnTick()
             sell = false;
          }
 
-         lose_ = lose(expertAdvisorID,timeCurrent,dayTimeCurrent);
+         lose_ = lose(expertAdvisorID,today,timeCurrent);
 
          UpdateResults(today);
 
@@ -769,10 +769,9 @@ double Comments(datetime today, datetime timeCurrent)
    return mid;
 }
 
-double lastOperationInformations(ulong xpAdvID, datetime timeCurrent, datetime dayTimeCurrent)
+double lastOperationInformations(ulong xpAdvID, datetime today, datetime timeCurrent)
 {   
    double res           = 0;
-   datetime today       = timeCurrent - dayTimeCurrent;
    bool manuallyClosed  = false;
    if (HistorySelect(today, timeCurrent))
    {
@@ -803,7 +802,7 @@ double lastOperationInformations(ulong xpAdvID, datetime timeCurrent, datetime d
   return res;
 }
 
-bool lose(ulong xpAdvID, datetime timeCurrent, datetime dayTimeCurrent)
+bool lose(ulong xpAdvID, datetime today, datetime timeCurrent)
 {
-   return lastOperationInformations(xpAdvID, timeCurrent, dayTimeCurrent) < 0;
+   return lastOperationInformations(xpAdvID, today, timeCurrent) < 0;
 }
