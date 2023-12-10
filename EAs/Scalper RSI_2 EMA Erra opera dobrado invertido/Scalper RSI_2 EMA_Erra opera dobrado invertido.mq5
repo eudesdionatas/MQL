@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                              Scalper_RSI_EMA.mq5 |
+//|                                    Volatilidade_RSI_2_EMA_11.mq5 |
 //|                                         Lucas, Eudes e Alexandre |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
@@ -20,7 +20,7 @@ MqlDateTime dateTimeStructure;
 input string   inpStartHour          = "9:15";     // Horário de Início
 input string   inpEndHour            = "17:45";    // Horário de encerramento
 input int      inpRSI_Period         = 2;          // Período do RSI
-input int      inpEMA                = 11;         // Período da média
+input int      inpEMA_Period         = 11;         // Período da média
 input int      inpLowerLevel         = 10;         // Mínima do RSI
 input int      inpHigherLevel        = 90;         // Máxima do RSI
 input int      inpVolume             = 1;          // Número de papéis
@@ -88,7 +88,7 @@ int OnInit()
 
 //---
    hndRSI = iRSI(_Symbol, _Period, inpRSI_Period, PRICE_CLOSE);
-   hndMA  = iMA (_Symbol, _Period, inpEMA, 0, MODE_EMA, PRICE_CLOSE);
+   hndMA  = iMA (_Symbol, _Period, inpEMA_Period, 0, MODE_EMA, PRICE_CLOSE);
    
    if(hndMA == INVALID_HANDLE || hndRSI == INVALID_HANDLE)
    {
@@ -106,7 +106,7 @@ int OnInit()
    lastCandleTime = 0;
 
    UpdateResults(today);
-   MidMinMaxVariation(timeCurrent,dayTimeCurrent);
+   MoreInformations(timeCurrent,dayTimeCurrent);
 
   //---
    return(INIT_SUCCEEDED);
@@ -188,13 +188,13 @@ void OnTick()
                               "\nPeríodo: " + inpRSI_Period +
                               "\nNível inferior: " + inpLowerLevel +
                               "\nNível superior: " + inpHigherLevel +
-                              "\n\nMédia aritmética exponencial:" + inpEMA + " períodos" +
+                              "\n\nMédia aritmética exponencial:" + inpEMA_Period + " períodos" +
                               "\n\nTake Profit: "  + inpTP + 
                               "\nStop Loss: " + inpSL +
                               "\nAlvo diário em pontos:" + inpPointsDailyTarget +
                               "\nLoss diário em pontos:" + inpPointsDailyTarget + 
                               "\n\n Número de operações: " + contOperations +
-                              "\nVariação média de pontos por candle:" + MidMinMaxVariation(timeCurrent, dayTimeCurrent);
+                              "\nVariação média de pontos por candle:" + MoreInformations(timeCurrent, dayTimeCurrent);
 
             SendMail("Robô Scalper: Resultado diário", content );            
             mailSent = true;
@@ -372,7 +372,7 @@ void OnTick()
          }
       }
    }
-   MidMinMaxVariation(timeCurrent,dayTimeCurrent);
+   MoreInformations(timeCurrent,dayTimeCurrent);
 }
 
 void UpdateResults (datetime today)
@@ -698,10 +698,40 @@ void AssignLabels()
 
 }
 
-double MidMinMaxVariation(datetime timeCurrent, datetime dayTimeCurrent)
+double MoreInformations(datetime timeCurrent, datetime dayTimeCurrent)
 {
-   double mid = 0;
+   double mid              = 0;
+   string diasDeOperacao   = "[";
+   int contDays            = 0;
    
+   if(monday) 
+   {
+      diasDeOperacao += " Seg ";
+      contDays++;
+   }
+   if(tuesday)
+   {
+      if (contDays > 0) diasDeOperacao    += "Ter ";
+      else diasDeOperacao    += " Ter ";
+   } 
+   if(wednesday) 
+   {
+      if (contDays > 0) diasDeOperacao    += "Qua ";
+      else diasDeOperacao    += " Qua ";
+   } 
+   if(thursday)
+   {
+      if (contDays > 0) diasDeOperacao    += "Qui ";
+      else diasDeOperacao    += " Qui ";
+   } 
+   if(friday)
+   {
+      if (contDays > 0) diasDeOperacao    += "Sex ";
+      else diasDeOperacao    += " Sex ";
+   } 
+
+   diasDeOperacao   += "]";
+
    datetime today = timeCurrent - dayTimeCurrent;
    int numberOfCandles     = Bars(_Symbol, _Period,today,timeCurrent);
 
@@ -712,9 +742,12 @@ double MidMinMaxVariation(datetime timeCurrent, datetime dayTimeCurrent)
       variation += iHigh(_Symbol,_Period,x) - iLow(_Symbol,_Period,x);
    }
    mid = variation/x;
-      Comment( "Número de candles do dia: " + numberOfCandles + "              RSI ( Mínima/Máxima ): " + inpLowerLevel + "/" + inpHigherLevel +
-               "\nAVG ( pontos por candle ): " + DoubleToString(mid,2) + "        Número de operações: " + contOperations);
-
+      Comment( "Número de candles do dia: " + numberOfCandles + "             RSI ( Período/Mínima/Máxima ): " + inpRSI_Period + "/" + inpLowerLevel + "/" + inpHigherLevel +
+               "             Dias de operação: " + diasDeOperacao + 
+               "\nAVG ( pontos por candle ): " + DoubleToString(mid,2) + "        Número de operações: " + contOperations + 
+               "                                  Horário de Início: " + inpStartHour + "h" +
+               "\nPeríodo da média: " + inpEMA_Period + "                          Volume inicial: " + inpVolume + 
+               "                                               Horário de encerramento: " + inpEndHour + "h");
    return mid;
 }
 
