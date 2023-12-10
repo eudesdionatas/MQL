@@ -758,7 +758,7 @@ double Comments(datetime today, datetime timeCurrent)
    }
    mid = variation/x;
       Comment( "Número de candles do dia: " + numberOfCandles + 
-               "      AVG ( pontos por candle ): " + DoubleToString(mid,2) +         
+               "      Média de pontos por candle: " + DoubleToString(mid,2) +         
                "      RSI ( Período/Mínima/Máxima ): " + inpRSI_Period + "/" + inpLowerLevel + "/" + inpHigherLevel +
                "      EMA (Período): " + inpEMA_Period +                           
                "      Volume inicial: " + inpVolume + 
