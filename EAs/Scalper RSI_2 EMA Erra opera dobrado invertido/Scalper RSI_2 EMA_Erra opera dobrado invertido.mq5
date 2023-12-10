@@ -109,7 +109,7 @@ int OnInit()
    lastCandleTime = 0;
 
    UpdateResults(today);
-   MoreInformations(timeCurrent,dayTimeCurrent);
+   Comments(today,timeCurrent);
 
   //---
    return(INIT_SUCCEEDED);
@@ -241,7 +241,7 @@ void OnTick()
                               "\nAlvo diário em pontos:" + inpPointsDailyTarget +
                               "\nLoss diário em pontos:" + inpPointsDailyTarget + 
                               "\n\n Número de operações: " + contOperations +
-                              "\nVariação média de pontos por candle:" + MoreInformations(timeCurrent, dayTimeCurrent);
+                              "\nVariação média de pontos por candle:" + Comments(today, timeCurrent);
 
             SendMail("Robô Scalper: Resultado diário", content );            
             mailSent = true;
@@ -419,7 +419,7 @@ void OnTick()
          }
       }
    }
-   MoreInformations(timeCurrent,dayTimeCurrent);
+   Comments(today,timeCurrent);
 }
 
 void UpdateResults (datetime today)
@@ -745,10 +745,9 @@ void AssignLabels()
 
 }
 
-double MoreInformations(datetime timeCurrent, datetime dayTimeCurrent)
+double Comments(datetime today, datetime timeCurrent)
 {
    double mid              = 0;
-   datetime today = timeCurrent - dayTimeCurrent;
    int numberOfCandles     = Bars(_Symbol, _Period,today,timeCurrent);
 
    double variation = 0;
