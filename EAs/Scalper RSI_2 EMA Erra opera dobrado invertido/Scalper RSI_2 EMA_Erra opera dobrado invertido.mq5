@@ -62,6 +62,7 @@ double         pointsTP;
 double         pointsTarget;
 datetime       lastCandleTime;
 ulong          expertAdvisorID;
+string         daysToOperate;
 
 
 CClientSocket* Socket;
@@ -96,6 +97,8 @@ int OnInit()
       return(INIT_FAILED);
    }
 
+   daysToOperate = DaysToOperate();
+
    // Socket=CClientSocket::Socket();
    // Socket.Config("localhost", 9092);
 
@@ -111,6 +114,50 @@ int OnInit()
   //---
    return(INIT_SUCCEEDED);
 }
+
+string DaysToOperate()
+{
+   string out   = "[";
+   int contDays    = 0;
+   
+   if(monday) 
+   {
+      out += " Seg ";
+      contDays++;
+   }
+   if(tuesday)
+   {
+      if (contDays > 0) out    += "Ter ";
+      else out    += " Ter ";
+      contDays++;
+   } 
+   if(wednesday) 
+   {
+      if (contDays > 0) out    += "Qua ";
+      else out    += " Qua ";
+      contDays++;
+   } 
+   if(thursday)
+   {
+      if (contDays > 0) out    += "Qui ";
+      else out    += " Qui ";
+      contDays++;
+   } 
+   if(friday)
+   {
+      if (contDays > 0) out    += "Sex ";
+      else out    += " Sex ";
+      contDays++;
+   } 
+
+   out   += "]";
+   if (contDays == 5) out = "Todos";
+
+   return out;
+
+}
+
+
 //+------------------------------------------------------------------+
 //| Expert deinitialization function                                 |
 //+------------------------------------------------------------------+
@@ -701,42 +748,6 @@ void AssignLabels()
 double MoreInformations(datetime timeCurrent, datetime dayTimeCurrent)
 {
    double mid              = 0;
-   string diasDeOperacao   = "[";
-   int contDays            = 0;
-   
-   if(monday) 
-   {
-      diasDeOperacao += " Seg ";
-      contDays++;
-   }
-   if(tuesday)
-   {
-      if (contDays > 0) diasDeOperacao    += "Ter ";
-      else diasDeOperacao    += " Ter ";
-      contDays++;
-   } 
-   if(wednesday) 
-   {
-      if (contDays > 0) diasDeOperacao    += "Qua ";
-      else diasDeOperacao    += " Qua ";
-      contDays++;
-   } 
-   if(thursday)
-   {
-      if (contDays > 0) diasDeOperacao    += "Qui ";
-      else diasDeOperacao    += " Qui ";
-      contDays++;
-   } 
-   if(friday)
-   {
-      if (contDays > 0) diasDeOperacao    += "Sex ";
-      else diasDeOperacao    += " Sex ";
-      contDays++;
-   } 
-
-   diasDeOperacao   += "]";
-   if (contDays == 5) diasDeOperacao = "Todos";
-
    datetime today = timeCurrent - dayTimeCurrent;
    int numberOfCandles     = Bars(_Symbol, _Period,today,timeCurrent);
 
@@ -752,7 +763,7 @@ double MoreInformations(datetime timeCurrent, datetime dayTimeCurrent)
                "      RSI ( Período/Mínima/Máxima ): " + inpRSI_Period + "/" + inpLowerLevel + "/" + inpHigherLevel +
                "      EMA (Período): " + inpEMA_Period +                           
                "      Volume inicial: " + inpVolume + 
-               "      Dias de operação: " + diasDeOperacao + 
+               "      Dias de operação: " + daysToOperate + 
                "      Horário de Início: " + inpStartHour + "h" +
                "      Horário de encerramento: " + inpEndHour + "h" +
                "      Número de operações: " + contOperations); 
