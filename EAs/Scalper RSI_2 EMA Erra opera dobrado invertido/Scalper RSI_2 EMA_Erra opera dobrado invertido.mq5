@@ -78,7 +78,7 @@ int OnInit()
    pointsSL                = inpSL * Point();
    pointsTP                = inpTP * Point();
    pointsTarget            = inpPointsDailyTarget * Point();
-   expertAdvisorID         = 1546;
+   expertAdvisorID         = (int)TimeLocal();
    datetime timeCurrent    = TimeCurrent();
    datetime dayTimeCurrent = timeCurrent % 86400;
    datetime today          = timeCurrent - dayTimeCurrent;
