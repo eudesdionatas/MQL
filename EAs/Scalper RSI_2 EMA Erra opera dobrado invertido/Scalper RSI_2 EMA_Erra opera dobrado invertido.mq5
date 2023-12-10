@@ -713,24 +713,29 @@ double MoreInformations(datetime timeCurrent, datetime dayTimeCurrent)
    {
       if (contDays > 0) diasDeOperacao    += "Ter ";
       else diasDeOperacao    += " Ter ";
+      contDays++;
    } 
    if(wednesday) 
    {
       if (contDays > 0) diasDeOperacao    += "Qua ";
       else diasDeOperacao    += " Qua ";
+      contDays++;
    } 
    if(thursday)
    {
       if (contDays > 0) diasDeOperacao    += "Qui ";
       else diasDeOperacao    += " Qui ";
+      contDays++;
    } 
    if(friday)
    {
       if (contDays > 0) diasDeOperacao    += "Sex ";
       else diasDeOperacao    += " Sex ";
+      contDays++;
    } 
 
    diasDeOperacao   += "]";
+   if (contDays == 5) diasDeOperacao = "Todos";
 
    datetime today = timeCurrent - dayTimeCurrent;
    int numberOfCandles     = Bars(_Symbol, _Period,today,timeCurrent);
@@ -742,12 +747,15 @@ double MoreInformations(datetime timeCurrent, datetime dayTimeCurrent)
       variation += iHigh(_Symbol,_Period,x) - iLow(_Symbol,_Period,x);
    }
    mid = variation/x;
-      Comment( "Número de candles do dia: " + numberOfCandles + "             RSI ( Período/Mínima/Máxima ): " + inpRSI_Period + "/" + inpLowerLevel + "/" + inpHigherLevel +
-               "             Dias de operação: " + diasDeOperacao + 
-               "\nAVG ( pontos por candle ): " + DoubleToString(mid,2) + "        Número de operações: " + contOperations + 
-               "                                  Horário de Início: " + inpStartHour + "h" +
-               "\nPeríodo da média: " + inpEMA_Period + "                          Volume inicial: " + inpVolume + 
-               "                                               Horário de encerramento: " + inpEndHour + "h");
+      Comment( "Número de candles do dia: " + numberOfCandles + 
+               "      AVG ( pontos por candle ): " + DoubleToString(mid,2) +         
+               "      RSI ( Período/Mínima/Máxima ): " + inpRSI_Period + "/" + inpLowerLevel + "/" + inpHigherLevel +
+               "      EMA (Período): " + inpEMA_Period +                           
+               "      Volume inicial: " + inpVolume + 
+               "      Dias de operação: " + diasDeOperacao + 
+               "      Horário de Início: " + inpStartHour + "h" +
+               "      Horário de encerramento: " + inpEndHour + "h" +
+               "      Número de operações: " + contOperations); 
    return mid;
 }
 
