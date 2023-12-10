@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                    Volatilidade_RSI_2_EMA_11.mq5 |
+//|                                              Scalper_RSI_EMA.mq5 |
 //|                                         Lucas, Eudes e Alexandre |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
@@ -21,8 +21,8 @@ input string   inpStartHour          = "9:15";     // Horário de Início
 input string   inpEndHour            = "17:45";    // Horário de encerramento
 input int      inpRSI_Period         = 2;          // Período do RSI
 input int      inpEMA                = 11;         // Período da média
-input int      inpRSI_BuyLevel       = 10;         // Mínima do RSI
-input int      inpRSI_SellLevel      = 90;         // Máxima do RSI
+input int      inpLowerLevel         = 10;         // Mínima do RSI
+input int      inpHigherLevel        = 90;         // Máxima do RSI
 input int      inpVolume             = 1;          // Número de papéis
 input int      inpPointsDailyTarget  = 500;        // Alvo diário em pontos
 input int      inpPointsDailyLoss    = 400;        // Loss diário em pontos            
@@ -186,8 +186,8 @@ void OnTick()
                               "\nHora da última negociação: " + TimeToString(timeCurrent, TIME_MINUTES) +
                               "\n\nRSI" + 
                               "\nPeríodo: " + inpRSI_Period +
-                              "\nNível inferior: " + inpRSI_BuyLevel +
-                              "\nNível superior: " + inpRSI_SellLevel +
+                              "\nNível inferior: " + inpLowerLevel +
+                              "\nNível superior: " + inpHigherLevel +
                               "\n\nMédia aritmética exponencial:" + inpEMA + " períodos" +
                               "\n\nTake Profit: "  + inpTP + 
                               "\nStop Loss: " + inpSL +
@@ -223,7 +223,7 @@ void OnTick()
       return;
    }
    
-   if(rsi[0] > inpRSI_BuyLevel && buyLose){
+   if(rsi[0] > inpLowerLevel && buyLose){
       if(closePrice > ma[0])
       {
          volume   = inpVolume;
@@ -232,7 +232,7 @@ void OnTick()
          
    }
    
-   if(rsi[0] < inpRSI_SellLevel && sellLose)
+   if(rsi[0] < inpHigherLevel && sellLose)
    {
       if(closePrice < ma[0])
       {
@@ -263,11 +263,11 @@ void OnTick()
          if(lose_)
          {
             volume *= 2;
-            if(lastDealType == DEAL_TYPE_SELL && rsi[0] < inpRSI_BuyLevel)
+            if(lastDealType == DEAL_TYPE_SELL && rsi[0] < inpLowerLevel)
             {
                buyLose = true;
             }
-            if(lastDealType == DEAL_TYPE_BUY && rsi[0] > inpRSI_SellLevel)
+            if(lastDealType == DEAL_TYPE_BUY && rsi[0] > inpHigherLevel)
             {
                sellLose = true;
             }
@@ -282,7 +282,7 @@ void OnTick()
       else
       {
          //buy: the rsi is below the lowest level
-         if(rsi[0] < inpRSI_BuyLevel)
+         if(rsi[0] < inpLowerLevel)
          {
             if(IsNewCandle())
             {
@@ -316,7 +316,7 @@ void OnTick()
          }
          else
          //sell: the rsi is above the highest level
-         if(rsi[0] > inpRSI_SellLevel)
+         if(rsi[0] > inpHigherLevel)
          {
             if(IsNewCandle())
             {
@@ -712,7 +712,7 @@ double MidMinMaxVariation(datetime timeCurrent, datetime dayTimeCurrent)
       variation += iHigh(_Symbol,_Period,x) - iLow(_Symbol,_Period,x);
    }
    mid = variation/x;
-      Comment( "Número de candles do dia: " + numberOfCandles + "              RSI ( Mínima/Máxima ): " + inpRSI_BuyLevel + "/" + inpRSI_SellLevel +
+      Comment( "Número de candles do dia: " + numberOfCandles + "              RSI ( Mínima/Máxima ): " + inpLowerLevel + "/" + inpHigherLevel +
                "\nAVG ( pontos por candle ): " + DoubleToString(mid,2) + "        Número de operações: " + contOperations);
 
    return mid;
