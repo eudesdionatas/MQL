@@ -9,8 +9,9 @@
  - [Estratégia 2](#scalper-2-melhores-resultados-em-lateraliza%C3%A7%C3%A3o)
 ## Estratégia 1: Melhores resultados em movimentos de tendência
 ## Estratégia 2: Scalper - Melhores resultados em lateralização
-Periodicidade 
-5 minutos
+
+- Periodicidade 
+- 5 minutos
 
 > Indicadores:
 >     EMA11   → Média móvel exponencial de 11 períodos
