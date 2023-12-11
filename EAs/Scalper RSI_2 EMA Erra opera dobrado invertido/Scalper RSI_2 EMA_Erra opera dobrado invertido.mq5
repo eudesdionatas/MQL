@@ -29,6 +29,7 @@ input int      inpPointsDailyLoss    = 400;        // Loss diário em pontos
 input double   inpTP                 = 200;        // Take Profit
 input bool     inpWithSL             = true;       // Lançar ordem com Stop Loss
 input double   inpSL                 = 170;        // Stop Loss
+input ulong    expertAdvisorID       = 564795;     // Número mágico (Identificador deste robô)
 input bool     monday                = true;       // Operar segunda-feira
 input bool     tuesday               = true;       // Operar terça-feira
 input bool     wednesday             = true;       // Operar quarta-feira
@@ -61,7 +62,6 @@ double         pointsSL;
 double         pointsTP;
 double         pointsTarget;
 datetime       lastCandleTime;
-ulong          expertAdvisorID;
 string         daysToOperate;
 
 
@@ -78,7 +78,6 @@ int OnInit()
    pointsSL                = inpSL * Point();
    pointsTP                = inpTP * Point();
    pointsTarget            = inpPointsDailyTarget * Point();
-   expertAdvisorID         = (int)TimeLocal();
    datetime timeCurrent    = TimeCurrent();
    datetime dayTimeCurrent = timeCurrent % 86400;
    datetime today          = timeCurrent - dayTimeCurrent;
