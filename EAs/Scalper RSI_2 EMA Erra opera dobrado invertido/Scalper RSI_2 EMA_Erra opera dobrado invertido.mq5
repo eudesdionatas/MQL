@@ -223,25 +223,22 @@ void OnTick()
    // current time is greater than or equal to the closing time or the gain is greater than or equal to the daily target 
    if(dayTimeCurrent >= endTime || pointsDailyResult >= inpPointsDailyTarget || pointsDailyResult <= (inpPointsDailyLoss) * -1)
    {
+         UpdateResults(today);
         if(positions > 0)
             trade.PositionClose(_Symbol);
-            UpdateResults(today);
         if (!mailSent)
         {
             string content = "O total de trades de hoje resultou em R$ " + DoubleToString(cashDailyResult,2) +" bruto." + 
                               "\n\nInício das negociações: " + inpStartHour +
                               "\nHora da última negociação: " + TimeToString(timeCurrent, TIME_MINUTES) +
-                              "\n\nRSI" + 
-                              "\nPeríodo: " + inpRSI_Period +
-                              "\nNível inferior: " + inpLowerLevel +
-                              "\nNível superior: " + inpHigherLevel +
-                              "\nMédia aritmética exponencial:" + inpEMA_Period + " períodos" +
+                              "\n\nRSI(Períodos / Nível inferior / Nível superior): " + inpRSI_Period + " / "+ inpLowerLevel + " / " + inpHigherLevel +
+                              "\nMédia aritmética exponencial: " + inpEMA_Period + " períodos" +
                               "\n\nTake Profit: "  + inpTP + 
                               "\nStop Loss: " + inpSL +
-                              "\nAlvo diário em pontos:" + inpPointsDailyTarget +
-                              "\nLoss diário em pontos:" + inpPointsDailyTarget + 
-                              "\n\n Número de operações: " + contOperations +
-                              "\nVariação média de pontos por candle:" + DoubleToString(Comments(today, timeCurrent),2);
+                              "\nAlvo diário em pontos: " + inpPointsDailyTarget +
+                              "\nLoss diário em pontos: " + inpPointsDailyTarget + 
+                              "\n\nNúmero de operações: " + contOperations +
+                              "\nVariação média de pontos por candle: " + DoubleToString(Comments(today, timeCurrent),2);
 
             SendMail("Robô Scalper: Resultado diário", content );            
             mailSent = true;
