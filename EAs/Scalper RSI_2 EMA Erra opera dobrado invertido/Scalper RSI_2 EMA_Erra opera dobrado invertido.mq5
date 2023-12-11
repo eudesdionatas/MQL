@@ -753,15 +753,16 @@ double Comments(datetime today, datetime timeCurrent)
       variation += iHigh(_Symbol,_Period,x) - iLow(_Symbol,_Period,x);
    }
    mid = variation/x;
-      Comment( "Número de candles do dia: " + numberOfCandles + 
-               "      Média de pontos por candle: " + DoubleToString(mid,2) +         
+      Comment( "Nº de candles do dia: " + numberOfCandles + 
+               "      AVG (pontos por candle): " + DoubleToString(mid,2) +         
                "      RSI ( Período / Mínima / Máxima ): " + inpRSI_Period + " / " + inpLowerLevel + " / " + inpHigherLevel +
                "      EMA (Período): " + inpEMA_Period +                           
                "      Volume inicial / atual: " + inpVolume + " / " + volume +
                "      Dias de operação: " + daysToOperate + 
-               "      Horário de Início: " + inpStartHour + "h" +
-               "      Horário de encerramento: " + inpEndHour + "h" +
-               "      Número de operações: " + contOperations); 
+               "      Início: " + inpStartHour + "h" +
+               "      Encerramento: " + inpEndHour + "h" +
+               "      Nº de operações: " + contOperations + 
+               "      Nº mágico: " + expertAdvisorID); 
    return mid;
 }
 
