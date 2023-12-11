@@ -235,13 +235,13 @@ void OnTick()
                               "\nPeríodo: " + inpRSI_Period +
                               "\nNível inferior: " + inpLowerLevel +
                               "\nNível superior: " + inpHigherLevel +
-                              "\n\nMédia aritmética exponencial:" + inpEMA_Period + " períodos" +
+                              "\nMédia aritmética exponencial:" + inpEMA_Period + " períodos" +
                               "\n\nTake Profit: "  + inpTP + 
                               "\nStop Loss: " + inpSL +
                               "\nAlvo diário em pontos:" + inpPointsDailyTarget +
                               "\nLoss diário em pontos:" + inpPointsDailyTarget + 
                               "\n\n Número de operações: " + contOperations +
-                              "\nVariação média de pontos por candle:" + Comments(today, timeCurrent);
+                              "\nVariação média de pontos por candle:" + DoubleToString(Comments(today, timeCurrent),2);
 
             SendMail("Robô Scalper: Resultado diário", content );            
             mailSent = true;
@@ -759,9 +759,9 @@ double Comments(datetime today, datetime timeCurrent)
    mid = variation/x;
       Comment( "Número de candles do dia: " + numberOfCandles + 
                "      Média de pontos por candle: " + DoubleToString(mid,2) +         
-               "      RSI ( Período/Mínima/Máxima ): " + inpRSI_Period + "/" + inpLowerLevel + "/" + inpHigherLevel +
+               "      RSI ( Período / Mínima / Máxima ): " + inpRSI_Period + " / " + inpLowerLevel + " / " + inpHigherLevel +
                "      EMA (Período): " + inpEMA_Period +                           
-               "      Volume inicial: " + inpVolume + 
+               "      Volume inicial / atual: " + inpVolume + " / " + volume +
                "      Dias de operação: " + daysToOperate + 
                "      Horário de Início: " + inpStartHour + "h" +
                "      Horário de encerramento: " + inpEndHour + "h" +
