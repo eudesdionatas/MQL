@@ -182,6 +182,8 @@ void OnDeinit(const int reason)
    IndicatorRelease(hndMA);
    IndicatorRelease(hndRSI);
 
+   Comment("");
+
    //---
    // CClientSocket::DeleteSocket();
    
