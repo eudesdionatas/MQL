@@ -228,8 +228,8 @@ void OnTick()
         if (!mailSent)
         {
             string content = "O total de trades de hoje resultou em R$ " + DoubleToString(cashDailyResult,2) +" bruto." + 
-                              "\n\nInício das negociações: " + inpStartHour +
-                              "\nHora da última negociação: " + TimeToString(timeCurrent, TIME_MINUTES) +
+                              "\n\nInício das negociações: " + inpStartHour + "h" +
+                              "\nHora da última negociação: " + TimeToString(timeCurrent, TIME_MINUTES) + "h" +
                               "\n\nRSI(Períodos / Nível inferior / Nível superior): " + inpRSI_Period + " / "+ inpLowerLevel + " / " + inpHigherLevel +
                               "\nMédia aritmética exponencial: " + inpEMA_Period + " períodos" +
                               "\n\nTake Profit: "  + inpTP + 
