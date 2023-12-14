@@ -29,7 +29,7 @@ input int      inpPointsDailyLoss    = 400;        // Loss diário em pontos
 input double   inpTP                 = 200;        // Take Profit
 input bool     inpWithSL             = true;       // Lançar ordem com Stop Loss
 input double   inpSL                 = 170;        // Stop Loss
-input ulong    expertAdvisorID       = 564795;     // Número mágico (Identificador deste robô)
+input ulong    expertAdvisorID       = 564791;     // Número mágico (Identificador deste robô)
 input bool     monday                = true;       // Operar segunda-feira
 input bool     tuesday               = true;       // Operar terça-feira
 input bool     wednesday             = true;       // Operar quarta-feira
@@ -53,6 +53,7 @@ int            contOperations    = 0;
 double         cashDailyResult   = 0;
 double         pointsDailyResult = 0;
 int            volume            = inpVolume;
+int            tradeVolume       = inpVolume;
 ENUM_DEAL_TYPE lastDealType;
 double         rsi[];
 double         ma[];
@@ -229,7 +230,8 @@ void OnTick()
             trade.PositionClose(_Symbol);
         if (!mailSent)
         {
-            string content = "O total de trades de hoje resultou em R$ " + DoubleToString(cashDailyResult,2) +" bruto." + 
+            
+            string content = "O total de trades de hoje resultou em R$ " + DoubleToString(cashDailyResult,0) +" bruto, " + DoubleToString(cashDailyResult * 5,0) + " pontos" + 
                               "\n\nInício das negociações: " + inpStartHour + "h" +
                               "\nHora da última negociação: " + TimeToString(timeCurrent, TIME_MINUTES) + "h" +
                               "\n\nRSI(Períodos / Nível inferior / Nível superior): " + inpRSI_Period + " / "+ inpLowerLevel + " / " + inpHigherLevel +
@@ -308,6 +310,7 @@ void OnTick()
          if(lose_)
          {
             volume *= 2;
+            tradeVolume = volume;
             if(lastDealType == DEAL_TYPE_SELL && rsi[0] < inpLowerLevel)
             {
                buyLose = true;
@@ -336,6 +339,7 @@ void OnTick()
                   if (buyLose)
                   {
                      trade.SetExpertMagicNumber(expertAdvisorID);
+                     tradeVolume = volume;
                      if(inpWithSL)
                         trade.Sell(volume,_Symbol,lastTick.bid, lastTick.bid + pointsSL, lastTick.bid - pointsTP, expertAdvisorID);
                      else
@@ -346,6 +350,7 @@ void OnTick()
                   }
                   else
                   {
+                     tradeVolume = volume;
                      trade.SetExpertMagicNumber(expertAdvisorID);
                      if(inpWithSL)
                         trade.Buy(volume,_Symbol,lastTick.ask, lastTick.ask - pointsSL, lastTick.ask + pointsTP, expertAdvisorID);
@@ -755,16 +760,17 @@ double Comments(datetime today, datetime timeCurrent)
       variation += iHigh(_Symbol,_Period,x) - iLow(_Symbol,_Period,x);
    }
    mid = variation/x;
-      Comment( "Nº de candles do dia: " + numberOfCandles + 
-               "      AVG (pontos por candle): " + DoubleToString(mid,2) +         
-               "      RSI ( Período / Mínima / Máxima ): " + inpRSI_Period + " / " + inpLowerLevel + " / " + inpHigherLevel +
-               "      EMA (Período): " + inpEMA_Period +                           
-               "      Volume inicial / atual: " + inpVolume + " / " + volume +
-               "      Dias de operação: " + daysToOperate + 
-               "      Início: " + inpStartHour + "h" +
-               "      Encerramento: " + inpEndHour + "h" +
-               "      Nº de operações: " + contOperations + 
-               "      Nº mágico: " + expertAdvisorID); 
+
+   Comment( "Nº de candles do dia: " + numberOfCandles + 
+            "      AVG (pontos por candle): " + DoubleToString(mid,2) +         
+            "      RSI ( Período / Mínima / Máxima ): " + inpRSI_Period + " / " + inpLowerLevel + " / " + inpHigherLevel +
+            "      EMA (Período): " + inpEMA_Period +                           
+            "      Volume inicial / negociado: " + inpVolume + " / " + tradeVolume +
+            "      Dias de operação: " + daysToOperate + 
+            "      Início: " + inpStartHour + "h" +
+            "      Encerramento: " + inpEndHour + "h" +
+            "      Nº de operações: " + contOperations + 
+            "      Nº mágico: " + expertAdvisorID); 
    return mid;
 }
 
