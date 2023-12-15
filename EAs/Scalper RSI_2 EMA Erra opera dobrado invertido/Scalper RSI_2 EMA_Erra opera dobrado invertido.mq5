@@ -231,7 +231,7 @@ void OnTick()
         if (!mailSent)
         {
             
-            string content = "O total de trades de hoje resultou em R$ " + DoubleToString(cashDailyResult,0) +" bruto, " + DoubleToString(cashDailyResult * 5,0) + " pontos" + 
+            string content = "O total de trades de hoje resultou em R$ " + DoubleToString(cashDailyResult,0) +" bruto, " + DoubleToString(cashDailyResult * 5,0) + " pontos." + 
                               "\n\nInício das negociações: " + inpStartHour + "h" +
                               "\nHora da última negociação: " + TimeToString(timeCurrent, TIME_MINUTES) + "h" +
                               "\n\nRSI(Períodos / Nível inferior / Nível superior): " + inpRSI_Period + " / "+ inpLowerLevel + " / " + inpHigherLevel +
@@ -466,9 +466,8 @@ double result(ulong xpAdvID, datetime today)
       ulong ticket          = HistoryDealGetTicket(i);
       ulong magicNumber     = HistoryDealGetInteger(ticket, DEAL_MAGIC);
 
-      if(HistoryDealGetInteger(ticket, DEAL_REASON) == DEAL_REASON_CLIENT)      
+      if(HistoryDealGetInteger(ticket, DEAL_REASON) == DEAL_REASON_CLIENT || HistoryDealGetInteger(ticket, DEAL_REASON) == DEAL_REASON_MOBILE)
       {
-         
          for(int x = totalDeals - 1; x >= 1 ; x--)
          {
             ulong previousTicket  = HistoryDealGetTicket(x);
