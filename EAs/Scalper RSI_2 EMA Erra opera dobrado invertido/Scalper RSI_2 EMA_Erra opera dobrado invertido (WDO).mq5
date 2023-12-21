@@ -16,7 +16,12 @@ CTrade trade;
 
 MqlDateTime dateTimeStructure;
 
+enum ticker {
+   WIN   = 1,  // Mini índice
+   WDO   = 2   // Mini dólar
+};
 
+input ticker   inpTicker             = WDO;        // Papel
 input string   inpStartHour          = "9:15";     // Horário de Início
 input string   inpEndHour            = "17:45";    // Horário de encerramento
 input int      inpRSI_Period         = 2;          // Período do RSI
@@ -24,12 +29,12 @@ input int      inpEMA_Period         = 11;         // Período da média
 input int      inpLowerLevel         = 10;         // Mínima do RSI
 input int      inpHigherLevel        = 90;         // Máxima do RSI
 input int      inpVolume             = 1;          // Número de papéis
-input int      inpPointsDailyTarget  = 500;        // Alvo diário em pontos
-input int      inpPointsDailyLoss    = 400;        // Loss diário em pontos            
-input double   inpTP                 = 200;        // Take Profit
+input int      inpPointsDailyTarget  = 10000;      // Alvo diário em pontos
+input int      inpPointsDailyLoss    = 8000;       // Loss diário em pontos            
+input double   inpTP                 = 4000;       // Take Profit
 input bool     inpWithSL             = true;       // Lançar ordem com Stop Loss
-input double   inpSL                 = 170;        // Stop Loss
-input ulong    expertAdvisorID       = 564791;     // Número mágico (Identificador deste robô)
+input double   inpSL                 = 3500;       // Stop Loss
+input ulong    expertAdvisorID       = 864253;     // Número mágico (Identificador deste robô)
 input bool     monday                = true;       // Operar segunda-feira
 input bool     tuesday               = true;       // Operar terça-feira
 input bool     wednesday             = true;       // Operar quarta-feira
@@ -199,6 +204,7 @@ void OnTick()
    datetime dayTimeCurrent = timeCurrent % 86400;
    datetime today          = timeCurrent - dayTimeCurrent;
    bool lose_              = false;
+   bool isNewCandle        = IsNewCandle();
 
    TimeCurrent(dateTimeStructure);
    if((dateTimeStructure.day_of_week == MONDAY     && !monday)    || 
@@ -230,8 +236,12 @@ void OnTick()
             trade.PositionClose(_Symbol);
         if (!mailSent)
         {
-            
-            string content = "O total de trades de hoje resultou em R$ " + DoubleToString(cashDailyResult,0) +" bruto, " + DoubleToString(cashDailyResult * 5,0) + " pontos." + 
+            string asset;
+            if (inpTicker == WIN) asset = "Mini índice";
+               else 
+            if (inpTicker == WDO) asset = "Mini dólar";
+
+            string content = "O total de trades no " + asset + " hoje, resultou em R$ " + DoubleToString(cashDailyResult,0) +" bruto, " + DoubleToString(pointsDailyResult,0) + " pontos." + 
                               "\n\nInício das negociações: " + inpStartHour + "h" +
                               "\nHora da última negociação: " + TimeToString(timeCurrent, TIME_MINUTES) + "h" +
                               "\n\nRSI(Períodos / Nível inferior / Nível superior): " + inpRSI_Period + " / "+ inpLowerLevel + " / " + inpHigherLevel +
@@ -270,20 +280,20 @@ void OnTick()
       return;
    }
    
-   if(rsi[0] > inpLowerLevel && buyLose){
+   if(rsi[0] > inpLowerLevel && buyLose ){
       if(closePrice > ma[0])
       {
-         volume   = inpVolume;
+         // volume   = inpVolume;
          buyLose  = false;
       }
          
    }
    
-   if(rsi[0] < inpHigherLevel && sellLose)
+   if(rsi[0] < inpHigherLevel && sellLose )
    {
       if(closePrice < ma[0])
       {
-         volume   = inpVolume;
+         // volume   = inpVolume;
          sellLose = false;
       }
          
@@ -327,12 +337,12 @@ void OnTick()
 
       }
       
-      else
+      else     // if(buy || sell)
       {
          //buy: the rsi is below the lowest level
          if(rsi[0] < inpLowerLevel)
          {
-            if(IsNewCandle())
+            if(isNewCandle || true)
             {
                if(IsToOperate())
                {
@@ -368,7 +378,7 @@ void OnTick()
          //sell: the rsi is above the highest level
          if(rsi[0] > inpHigherLevel)
          {
-            if(IsNewCandle())
+            if(isNewCandle || true)
             {
                if(IsToOperate())
                {
@@ -410,7 +420,17 @@ void OnTick()
             trade.PositionClose(_Symbol);
             buy = false;
             UpdateResults(today);
-            volume = inpVolume;   
+            lose_ = lose(expertAdvisorID,today,timeCurrent);
+            if (lose_)
+            {
+               volume *= 2;
+               tradeVolume = volume;   
+            }
+            else
+            {
+               tradeVolume = volume;
+               volume = inpVolume;   
+            }
          } 
          // when the candle closes below the average
          if(sell && closePrice <= ma[1] && !buyLose)
@@ -418,7 +438,17 @@ void OnTick()
             trade.PositionClose(_Symbol);
             sell = false;
             UpdateResults(today);
-            volume = inpVolume;   
+            lose_ = lose(expertAdvisorID,today,timeCurrent);
+            if (lose_)
+            {
+               volume *= 2;
+               tradeVolume = volume;   
+            }
+            else
+            {
+               tradeVolume = volume;
+               volume = inpVolume;   
+            }
          }
       }
    }
@@ -428,7 +458,7 @@ void OnTick()
 void UpdateResults (datetime today)
 {
    pointsDailyResult = result(expertAdvisorID, today);
-   cashDailyResult   = (pointsDailyResult/5) * inpVolume;
+   cashDailyResult   = ((pointsDailyResult/500)*5) * inpVolume;
    if(pointsDailyResult == 0)
    {
       ObjectSetInteger  (0,"result",OBJPROP_COLOR, clrBlack);
@@ -485,7 +515,7 @@ double result(ulong xpAdvID, datetime today)
    }
    contOperations = (totalDeals+1)/2;
  }
-  res = (res/inpVolume) * 5;
+  res = ((res/inpVolume)*500)/5;
   return res;
 }
 
@@ -626,7 +656,7 @@ void AssignLabels()
 
    ObjectCreate      (0,"stopLossCash",OBJ_LABEL,  0, 0, 0);
    if(inpWithSL)
-      ObjectSetString   (0,"stopLossCash",OBJPROP_TEXT, "R$ " + DoubleToString(inpSL/5,2));
+      ObjectSetString   (0,"stopLossCash",OBJPROP_TEXT, "R$ " + DoubleToString((inpSL/500)*5,2));
    else
       ObjectSetString   (0,"stopLossCash",OBJPROP_TEXT, "--");  
    ObjectSetInteger  (0,"stopLossCash",OBJPROP_COLOR, clrBlack);
@@ -658,7 +688,7 @@ void AssignLabels()
 
    ObjectCreate      (0,"lossCash",OBJ_LABEL,  0, 0, 0);
    if (inpWithSL)
-      ObjectSetString   (0,"lossCash",OBJPROP_TEXT, IntegerToString(inpVolume) + " x R$ " + IntegerToString(inpPointsDailyLoss/5));
+      ObjectSetString   (0,"lossCash",OBJPROP_TEXT, IntegerToString(inpVolume) + " x R$ " + IntegerToString((inpPointsDailyLoss/500)*5));
    else
       ObjectSetString   (0,"lossCash",OBJPROP_TEXT, "--");
    ObjectSetInteger  (0,"lossCash",OBJPROP_COLOR, clrRed);
@@ -686,7 +716,7 @@ void AssignLabels()
    ObjectSetInteger  (0,"takeProfitPoints",OBJPROP_ANCHOR,ANCHOR_RIGHT_UPPER);    
 
    ObjectCreate      (0,"takeProfitCash",OBJ_LABEL,  0, 0, 0);
-   ObjectSetString   (0,"takeProfitCash",OBJPROP_TEXT, "R$ " + DoubleToString(inpTP/5,2));
+   ObjectSetString   (0,"takeProfitCash",OBJPROP_TEXT, "R$ " + DoubleToString((inpTP/500)*5,2));
    ObjectSetInteger  (0,"takeProfitCash",OBJPROP_COLOR, clrGreen);
    ObjectSetInteger  (0,"takeProfitCash",OBJPROP_XDISTANCE, 5);
    ObjectSetInteger  (0,"takeProfitCash",OBJPROP_YDISTANCE, 250);
@@ -712,7 +742,7 @@ void AssignLabels()
    ObjectSetInteger  (0,"targetPoints",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER);
 
    ObjectCreate      (0,"targetCash",OBJ_LABEL,  0, 0, 0);
-   ObjectSetString   (0,"targetCash",OBJPROP_TEXT, IntegerToString(inpVolume) + " x R$ " + IntegerToString(inpPointsDailyTarget/5));
+   ObjectSetString   (0,"targetCash",OBJPROP_TEXT, IntegerToString(inpVolume) + " x R$ " + IntegerToString(((inpPointsDailyTarget)/500)*5));
    ObjectSetInteger  (0,"targetCash",OBJPROP_COLOR, clrBlue);
    ObjectSetInteger  (0,"targetCash",OBJPROP_XDISTANCE, 5);
    ObjectSetInteger  (0,"targetCash",OBJPROP_YDISTANCE, 90);
@@ -738,7 +768,7 @@ void AssignLabels()
    ObjectSetInteger  (0,"resultPoints",OBJPROP_ANCHOR,ANCHOR_RIGHT_LOWER);    
 
    ObjectCreate      (0,"resultCash",OBJ_LABEL,  0, 0, 0);
-   ObjectSetString   (0,"resultCash",OBJPROP_TEXT, "R$ " + DoubleToString(cashDailyResult,2));
+   ObjectSetString   (0,"resultCash",OBJPROP_TEXT, "R$ " + DoubleToString((cashDailyResult/500)*5,2));
    ObjectSetInteger  (0,"resultCash",OBJPROP_COLOR, clrBlack);
    ObjectSetInteger  (0,"resultCash",OBJPROP_XDISTANCE, 5);
    ObjectSetInteger  (0,"resultCash",OBJPROP_YDISTANCE, 5);
