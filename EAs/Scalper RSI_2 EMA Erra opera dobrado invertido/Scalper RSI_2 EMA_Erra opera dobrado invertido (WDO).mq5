@@ -286,7 +286,6 @@ void OnTick()
          // volume   = inpVolume;
          buyLose  = false;
       }
-         
    }
    
    if(rsi[0] < inpHigherLevel && sellLose )
@@ -296,7 +295,6 @@ void OnTick()
          // volume   = inpVolume;
          sellLose = false;
       }
-         
    }
 
    if(positions == 0)

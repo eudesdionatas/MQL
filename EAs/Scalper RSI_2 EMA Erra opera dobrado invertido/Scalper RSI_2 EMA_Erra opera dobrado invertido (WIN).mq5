@@ -283,20 +283,18 @@ void OnTick()
    if(rsi[0] > inpLowerLevel && buyLose){
       if(closePrice > ma[0])
       {
-         volume   = inpVolume;
+         // volume   = inpVolume;
          buyLose  = false;
       }
-         
    }
    
    if(rsi[0] < inpHigherLevel && sellLose)
    {
       if(closePrice < ma[0])
       {
-         volume   = inpVolume;
+         // volume   = inpVolume;
          sellLose = false;
       }
-         
    }
 
    if(positions == 0)
