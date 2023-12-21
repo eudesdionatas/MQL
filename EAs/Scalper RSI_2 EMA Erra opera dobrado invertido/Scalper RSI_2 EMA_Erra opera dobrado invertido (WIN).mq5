@@ -335,7 +335,7 @@ void OnTick()
 
       }
       
-      else
+      else  //if(buy || sell)
       {
          //buy: the rsi is below the lowest level
          if(rsi[0] < inpLowerLevel)
