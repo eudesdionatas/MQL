@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                              Scalper_RSI_EMA.mq5 |
+//|                                                (WIN) Scalper.mq5 |
 //|                                         Lucas, Eudes e Alexandre |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
@@ -8,8 +8,11 @@
    When the RSI is higher then the upper level then is maded a sell 
    When the RSI is lower then the low level then is maded a buy
    In case of losing in the last sell, if the RSI stays in above of higher level then the next trade will a buy with the double volume
-   And, in case of losing in the last buy, if the RSI stays below the lower level, is maded a sell with the double volume
+   In case of losing in the last buy, if the RSI stays below the lower level, is maded a sell with the double volume
+   And in both cases (losing in trade): 
+      If the RSI value stays higher than the up level or lower than the low level, the operation will continue inverted until win at trade
 */
+
 
 #property copyright "Lucas, Eudes e Alexandre"
 #property link      "https://www.mql5.com"
