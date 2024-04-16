@@ -211,6 +211,9 @@ void OnDeinit(const int reason)
    
    IndicatorRelease(hndMA);
    IndicatorRelease(hndRSI);
+   ArrayFree(ma);
+   ArrayFree(rsi);
+
 
    Comment("");
 
