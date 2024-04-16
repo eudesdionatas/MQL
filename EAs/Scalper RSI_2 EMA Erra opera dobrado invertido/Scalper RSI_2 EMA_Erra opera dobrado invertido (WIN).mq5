@@ -116,6 +116,12 @@ int OnInit()
    UpdateResults(today);
    Comments(today,timeCurrent);
 
+   //Adiciona o indicador da média no gráfico
+   ChartIndicatorAdd(ChartID(),0,hndMA);
+   //Adiciona o indicador RSI no gráfico
+   ChartIndicatorAdd(ChartID(),1,hndRSI);
+
+
   //---
    return(INIT_SUCCEEDED);
 }
@@ -184,6 +190,13 @@ void OnDeinit(const int reason)
    ObjectDelete(0,"result");
    ObjectDelete(0,"resultPoints");
    ObjectDelete(0,"resultCash");
+
+   //Remove o indicador da média do gráfico
+   string shortNameMedia = ChartIndicatorName(ChartID(),0,0);
+   ChartIndicatorDelete(ChartID(),0,shortNameMedia);
+   //Remove o indicador RSI do gráfico
+   string shortNameRSI = ChartIndicatorName(ChartID(),1,0);
+   ChartIndicatorDelete(ChartID(),1,shortNameRSI);
    
    IndicatorRelease(hndMA);
    IndicatorRelease(hndRSI);
