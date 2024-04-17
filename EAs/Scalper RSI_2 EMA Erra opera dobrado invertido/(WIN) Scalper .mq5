@@ -249,7 +249,7 @@ void OnTick()
       pointsDailyResult = 0;
       cashDailyResult = 0;
       UpdateResults(today);
-      tradeVolume = inpVolume;
+      volume = inpVolume;
       return;
    }
    
