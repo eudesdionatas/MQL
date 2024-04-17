@@ -249,6 +249,7 @@ void OnTick()
       pointsDailyResult = 0;
       cashDailyResult = 0;
       UpdateResults(today);
+      tradeVolume = inpVolume;
       return;
    }
    
@@ -452,8 +453,8 @@ void OnTick()
             }
             else
             {
-               tradeVolume = volume;
                volume = inpVolume;   
+               tradeVolume = volume;
             } 
          } 
          // when the candle closes below the average
@@ -470,8 +471,8 @@ void OnTick()
             }
             else
             {
-               tradeVolume = volume;
                volume = inpVolume;   
+               tradeVolume = volume;
             }
          }
       }
